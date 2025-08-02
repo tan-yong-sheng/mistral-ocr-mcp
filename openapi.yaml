@@ -1,0 +1,161 @@
+openapi: 3.0.3
+
+info:
+  title: Mistral OCR API
+  version: 1.0.0
+  description: |
+    API for performing Optical Character Recognition (OCR) using Mistral's latest OCR model. Supports processing documents and images via URL, upload, or base64.
+
+servers:
+  - url: https://api.mistral.ai/v1
+
+paths:
+  /ocr:
+    post:
+      summary: Perform OCR on a document or image
+      operationId: ocr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - model
+                - document
+              properties:
+                model:
+                  type: string
+                  example: mistral-ocr-latest
+                document:
+                  type: object
+                  required:
+                    - type
+                  oneOf:
+                    - properties:
+                        type:
+                          enum: [document_url]
+                        document_url:
+                          type: string
+                          format: uri
+                          example: https://arxiv.org/pdf/2201.04234
+                    - properties:
+                        type:
+                          enum: [image_url]
+                        image_url:
+                          type: string
+                          format: uri
+                          example: https://example.com/sample.jpg
+                  discriminator:
+                    propertyName: type
+                include_image_base64:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: OCR result
+          content:
+            application/json:
+              schema:
+                type: object
+                description: OCR results, typically in markdown format with metadata
+
+  /files:
+    post:
+      summary: Upload a file for OCR processing
+      operationId: uploadFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - purpose
+                - file
+              properties:
+                purpose:
+                  type: string
+                  enum: [ocr]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File upload metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  object:
+                    type: string
+                  size_bytes:
+                    type: integer
+                  created_at:
+                    type: integer
+                  filename:
+                    type: string
+                  purpose:
+                    type: string
+                  source:
+                    type: string
+                  deleted:
+                    type: boolean
+
+  /files/{id}:
+    get:
+      summary: Get uploaded file metadata
+      operationId: getFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File metadata
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /files/{id}/url:
+    get:
+      summary: Get a signed URL for a file
+      operationId: getSignedUrl
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: expiry
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 24
+      responses:
+        '200':
+          description: Signed URL result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signed_url:
+                    type: string
+                    format: uri
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+security:
+  - BearerAuth: []
