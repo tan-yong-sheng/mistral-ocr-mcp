@@ -6,12 +6,21 @@ import { z } from "zod";
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import fs from 'fs';
+import { createRequire } from 'module';
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY || "YOUR_MISTRAL_API_KEY";
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json');
+
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+
+if (!MISTRAL_API_KEY || MISTRAL_API_KEY === "YOUR_MISTRAL_API_KEY") {
+  console.error("Error: MISTRAL_API_KEY environment variable is required");
+  process.exit(1);
+}
 
 const server = new McpServer({
   name: "Mistral OCR MCP",
-  version: "1.0.0"
+  version: packageJson.version
 });
 
 server.tool(
@@ -184,4 +193,16 @@ server.tool(
 );
 
 const transport = new StdioServerTransport();
+
+// Add error handling
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 server.connect(transport);
