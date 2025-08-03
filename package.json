@@ -1,6 +1,6 @@
 {
   "name": "mistral-ocr-mcp",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "An MCP server for Mistral OCR.",
   "main": "dist/index.js",
   "exports": {
