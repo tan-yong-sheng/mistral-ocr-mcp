@@ -7,14 +7,20 @@ import fetch from 'node-fetch';
 import FormData from 'form-data';
 import fs from 'fs';
 import { createRequire } from 'module';
+import { getConfig } from './config.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+let MISTRAL_API_KEY: string;
+let MISTRAL_BASE_URL: string;
 
-if (!MISTRAL_API_KEY || MISTRAL_API_KEY === "YOUR_MISTRAL_API_KEY") {
-  console.error("Error: MISTRAL_API_KEY environment variable is required");
+try {
+  const config = getConfig();
+  MISTRAL_API_KEY = config.api_key!;
+  MISTRAL_BASE_URL = config.base_url!;
+} catch (err: any) {
+  console.error(`Error: ${err.message}`);
   process.exit(1);
 }
 
@@ -36,7 +42,7 @@ server.tool(
       form.append('purpose', 'ocr');
       form.append('file', fs.createReadStream(file_path));
 
-      const uploadResponse = await fetch('https://api.mistral.ai/v1/files', {
+      const uploadResponse = await fetch(`${MISTRAL_BASE_URL}/files`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${MISTRAL_API_KEY}`,
@@ -61,7 +67,7 @@ server.tool(
       const fileId = uploadResult.id;
 
       // Step 2: Retrieve a Signed URL
-      const urlResponse = await fetch(`https://api.mistral.ai/v1/files/${fileId}/url?expiry=24`, {
+      const urlResponse = await fetch(`${MISTRAL_BASE_URL}/files/${fileId}/url?expiry=24`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -85,7 +91,7 @@ server.tool(
       const signedUrl = urlResult.url;
 
       // Step 3: Send that URL to the OCR Endpoint
-      const ocrResponse = await fetch('https://api.mistral.ai/v1/ocr', {
+      const ocrResponse = await fetch(`${MISTRAL_BASE_URL}/ocr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +149,7 @@ server.tool(
   },
   async ({ pdf_url }) => {
     try {
-      const response = await fetch('https://api.mistral.ai/v1/ocr', {
+      const response = await fetch(`${MISTRAL_BASE_URL}/ocr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
