@@ -20,20 +20,33 @@
     "typecheck": "tsc --noEmit",
     "prepare": "husky install"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "bin": {
     "mistral-ocr": "dist/cli.js"
   },
   "keywords": [
     "mcp",
     "mistral",
-    "ocr"
+    "ocr",
+    "pdf",
+    "text-extraction"
   ],
-  "author": "",
+  "author": "tan-yong-sheng",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tan-yong-sheng/mistral-ocr-mcp.git"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",
     "node-fetch": "^3.3.2",
     "zod": "^3.22.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "esbuild": "^0.28.0",
