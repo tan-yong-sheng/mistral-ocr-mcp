@@ -4,8 +4,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from "zod";
 import fetch from 'node-fetch';
-import FormData from 'form-data';
-import fs from 'fs';
 import { createRequire } from 'module';
 import { getConfig } from './config.js';
 
@@ -30,122 +28,10 @@ const server = new McpServer({
 });
 
 server.tool(
-  'ocr_for_local_pdf',
-  'Performs OCR on a local PDF file by uploading it to Mistral API.',
+  'ocr_pdf_url',
+  'Extract text from PDF via URL using Mistral OCR.',
   {
-    file_path: z.string().describe("The local path to the PDF file.")
-  },
-  async ({ file_path }) => {
-    try {
-      // Step 1: Upload the file
-      const form = new FormData();
-      form.append('purpose', 'ocr');
-      form.append('file', fs.createReadStream(file_path));
-
-      const uploadResponse = await fetch(`${MISTRAL_BASE_URL}/files`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${MISTRAL_API_KEY}`,
-          ...form.getHeaders()
-        },
-        body: form
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Upload Error: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`
-            }
-          ]
-        };
-      }
-
-      const uploadResult = await uploadResponse.json() as { id: string };
-      const fileId = uploadResult.id;
-
-      // Step 2: Retrieve a Signed URL
-      const urlResponse = await fetch(`${MISTRAL_BASE_URL}/files/${fileId}/url?expiry=24`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${MISTRAL_API_KEY}`
-        }
-      });
-
-      if (!urlResponse.ok) {
-        const errorText = await urlResponse.text();
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Signed URL Error: ${urlResponse.status} ${urlResponse.statusText} - ${errorText}`
-            }
-          ]
-        };
-      }
-
-      const urlResult = await urlResponse.json() as { url: string };
-      const signedUrl = urlResult.url;
-
-      // Step 3: Send that URL to the OCR Endpoint
-      const ocrResponse = await fetch(`${MISTRAL_BASE_URL}/ocr`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${MISTRAL_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'mistral-ocr-latest',
-          document: {
-            type: 'document_url',
-            document_url: signedUrl
-          }
-        })
-      });
-
-      if (!ocrResponse.ok) {
-        const errorText = await ocrResponse.text();
-        return {
-          content: [
-            {
-              type: "text",
-              text: `OCR API Error: ${ocrResponse.status} ${ocrResponse.statusText} - ${errorText}`
-            }
-          ]
-        };
-      }
-
-      const ocrResult = await ocrResponse.json();
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(ocrResult, null, 2)
-          }
-        ]
-      };
-
-    } catch (error: any) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error performing OCR on local file: ${error.message}`
-          }
-        ]
-      };
-    }
-  }
-);
-
-server.tool(
-  'ocr_for_pdf_url',
-  'Performs OCR on a PDF file from a public URL.',
-  {
-    pdf_url: z.string().url().describe("The public URL of the PDF file.")
+    pdf_url: z.string().url().describe("Public URL to PDF file")
   },
   async ({ pdf_url }) => {
     try {
@@ -170,18 +56,20 @@ server.tool(
           content: [
             {
               type: "text",
-              text: `API Error: ${response.status} ${response.statusText} - ${errorText}`
+              text: `API error: ${response.status} ${errorText}`
             }
           ]
         };
       }
 
-      const ocrResult = await response.json();
+      const result = await response.json() as any;
+      const text = result.pages.map((p: any) => p.markdown).join('\n\n');
+
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify(ocrResult, null, 2)
+            text: text
           }
         ]
       };
@@ -190,7 +78,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `Error performing OCR: ${error.message}`
+            text: `Error: ${error.message}`
           }
         ]
       };
@@ -200,7 +88,6 @@ server.tool(
 
 const transport = new StdioServerTransport();
 
-// Add error handling
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);

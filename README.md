@@ -1,113 +1,81 @@
-# Mistral OCR MCP Server
+# mistral-ocr-mcp
 
-## Quick Start
+Mistral OCR CLI + MCP server. Extract text from PDFs via URL using `mistral-ocr-latest` model.
 
-Make sure to set up your environment variables first:
-- `MISTRAL_API_KEY` (required, get this from your Mistral API settings)
-
-## Installation
-
-### 1. Using with Claude Desktop 
-
-Add the server config to your Claude Desktop configuration file:
-
-Add the following configuration to the `mcpServers` object in your Claude configuration file:
-
-#### For Local Installation (on Windows)
-
-```json
-"mistral-ocr-mcp": {
-  "command": "cmd",
-  "args": [
-    "/k",
-    "npx",
-    "-y",
-    "mistral-ocr-mcp"
-  ],
-  "env": {
-    "MISTRAL_API_KEY": "<YOUR_MISTRAL_API_KEY>"
-  }
-}
-```
-
-#### For Local installation (on Linux/MacOS)
-
-```json
-"mistral-ocr-mcp": {
-  "command": "npx",
-  "args": [
-    "-y",
-    "mistral-ocr-mcp"
-  ],
-  "env": {
-    "MISTRAL_API_KEY": "<YOUR_MISTRAL_API_KEY>"
-  }
-}
-```
-
-#### For Development (on Windows / Linux / MacOS)
+## Install
 
 ```bash
-cd /path/to/mistral-ocr-mcp
-npm run build
+npm install -g mistral-ocr-mcp
 ```
 
-```json
-"mistral-ocr-mcp": {
-  "command": "node",
-  "args": [
-    "/path/to/mistral-ocr-mcp/dist/index.js"
-  ],
-  "env": {
-    "MISTRAL_API_KEY": "<YOUR_MISTRAL_API_KEY>"
-  }
-}
-```
+## Setup
 
-Location of the configuration file:
-- Windows: `%APPDATA%/Claude/claude_desktop_config.json`
-- MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-### 2. Alternative Installation Methods
-
-You can also run this server directly using `npx`:
-
+Set API key:
 ```bash
-npx mistral-ocr-mcp
+mistral-ocr config api_key <your-key>
 ```
 
-Or set your API key as an environment variable:
-
+Optional: custom base URL (default: `https://api.mistral.ai/v1`):
 ```bash
-export MISTRAL_API_KEY="YOUR_MISTRAL_API_KEY"
-npx mistral-ocr-mcp
+mistral-ocr config base_url https://custom.url/v1
 ```
 
-## Available Tools
+## CLI Usage
 
-The server provides the following tools for OCR operations:
-
-- `ocr_for_local_pdf` - Perform OCR on a local PDF file
-  - Requires: file_path (string) - The local path to the PDF file
-  - Process: Uploads the file to Mistral API, gets a signed URL, and performs OCR
-
-- `ocr_for_pdf_url` - Perform OCR on a PDF file from a public URL
-  - Requires: pdf_url (string) - The public URL of the PDF file
-  - Process: Directly processes the PDF from the provided URL using Mistral's OCR API
-
-## Development
-
-If you want to contribute or modify the server:
-
+Extract text from PDF URL:
 ```bash
-# Clone the repository
-git clone https://github.com/tan-yong-sheng/mistral-ocr-mcp.git
+mistral-ocr ocr "https://arxiv.org/pdf/2301.00001.pdf"
+```
 
-# Install dependencies
-npm install
+Output: JSON with `text`, `pages`, `confidence`, `model`.
 
-# Build the server
-npm run build
+Config commands:
+```bash
+mistral-ocr config show          # Show current config
+mistral-ocr config api_key <key> # Set API key
+mistral-ocr config base_url <url> # Set base URL
+```
 
-# For development with auto-rebuild
-npm start
+## MCP Server
+
+Start server (stdio transport):
+```bash
+mistral-ocr-mcp
+```
+
+Tool: `ocr_pdf_url`
+- Input: `pdf_url` (public URL to PDF)
+- Output: Extracted markdown text
+
+Example (Node.js client):
+```javascript
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+
+const transport = new StdioClientTransport({
+  command: "node",
+  args: ["node_modules/.bin/mistral-ocr-mcp"],
+  env: { MISTRAL_API_KEY: "your-key" }
+});
+
+const client = new Client({ name: "test", version: "1.0.0" }, { capabilities: {} });
+await client.connect(transport);
+
+const result = await client.callTool({
+  name: "ocr_pdf_url",
+  arguments: { pdf_url: "https://example.com/doc.pdf" }
+});
+
+console.log(result.content[0].text);
+```
+
+## Config Location
+
+- Linux/macOS: `~/.mistral-ocr/config.json`
+- Windows: `%USERPROFILE%\.mistral-ocr\config.json`
+
+Override: `MISTRAL_OCR_CONFIG_DIR` env var.
+
+## License
+
+ISC

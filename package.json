@@ -1,21 +1,26 @@
 {
   "name": "mistral-ocr-mcp",
-  "version": "0.0.5",
-  "description": "An MCP server for Mistral OCR.",
+  "version": "1.0.0",
+  "description": "Mistral OCR CLI + MCP server. Extract text from PDFs via URL.",
   "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js"
   },
   "type": "module",
   "scripts": {
+    "clean": "rimraf dist",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:run": "vitest run",
+    "lint": "eslint \"src/**/*.{ts,js}\" --max-warnings=0",
+    "format": "prettier \"src/**/*.{ts,js}\" --check",
+    "format:write": "prettier \"src/**/*.{ts,js}\" --write",
     "build": "tsc",
-    "postbuild": "chmod +x dist/index.js dist/cli.js 2>/dev/null || true"
+    "prebuild": "npm run clean",
+    "typecheck": "tsc --noEmit"
   },
   "bin": {
-    "mistral-ocr-mcp": "dist/index.js",
     "mistral-ocr": "dist/cli.js"
   },
   "keywords": [
@@ -27,13 +32,17 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",
-    "form-data": "^4.0.0",
+    "form-data": "^4.0.5",
     "node-fetch": "^3.3.2",
+    "pdf2image": "^1.2.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/form-data": "^2.5.0",
     "@types/node": "^20.11.24",
+    "eslint": "^8.57.1",
+    "prettier": "^3.8.3",
+    "rimraf": "^5.0.10",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
     "vitest": "^4.1.5"
