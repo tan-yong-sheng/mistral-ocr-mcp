@@ -12,13 +12,11 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
-    "test:run": "vitest run",
     "lint": "eslint \"src/**/*.{ts,js}\" --max-warnings=0",
     "format": "prettier \"src/**/*.{ts,js}\" --check",
     "format:write": "prettier \"src/**/*.{ts,js}\" --write",
     "build": "tsc",
     "prebuild": "npm run clean",
-
     "typecheck": "tsc --noEmit",
     "prepare": "husky install"
   },
@@ -43,7 +41,6 @@
     "@types/node": "^20.11.24",
     "@typescript-eslint/eslint-plugin": "^8.59.0",
     "@typescript-eslint/parser": "^8.59.0",
-
     "eslint": "^8.57.1",
     "husky": "^9.1.7",
     "prettier": "^3.8.3",
