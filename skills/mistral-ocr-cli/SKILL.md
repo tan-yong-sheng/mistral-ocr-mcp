@@ -52,7 +52,7 @@ mistral-ocr ocr https://example.com/document.pdf
   "text": "extracted text content",
   "pages": 5,
   "confidence": 0.95,
-  "model": "pixtral-12b-2409"
+  "model": "mistral-ocr-latest"
 }
 ```
 
