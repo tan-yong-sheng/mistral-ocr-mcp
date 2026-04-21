@@ -24,6 +24,38 @@ Config stored in `~/.mistral-ocr/config.json`. Environment variables override fi
 
 ## Commands
 
+### Run OCR on PDF
+
+```bash
+mistral-ocr ocr <pdf-path>
+```
+
+Extracts text from PDF using Mistral vision model. Outputs JSON with extracted text + metadata.
+
+**Examples:**
+
+```bash
+# Local file
+mistral-ocr ocr ./document.pdf
+
+# With output file
+mistral-ocr ocr ./document.pdf > output.json
+
+# URL
+mistral-ocr ocr https://example.com/document.pdf
+```
+
+**Output format:**
+
+```json
+{
+  "text": "extracted text content",
+  "pages": 5,
+  "confidence": 0.95,
+  "model": "pixtral-12b-2409"
+}
+```
+
 ### Set API Key
 
 ```bash
@@ -57,16 +89,18 @@ Displays current settings + config file location.
 ## Examples
 
 ```bash
-# Set both
+# Setup
 mistral-ocr config api_key sk-...
 mistral-ocr config base_url https://api.mistral.ai/v1
-
-# View
 mistral-ocr config show
+
+# OCR workflow
+mistral-ocr ocr ./invoice.pdf > invoice.json
+cat invoice.json | jq '.text'
 
 # Override with env var
 export MISTRAL_API_KEY=sk-override
-mistral-ocr config show  # Shows env var value
+mistral-ocr ocr ./document.pdf
 ```
 
 ## Troubleshooting
