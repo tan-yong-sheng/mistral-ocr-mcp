@@ -3,14 +3,14 @@
   "files": {
     "src\\cli.ts": {
       "latest": {
-        "commit": "70f8afb",
-        "timestamp": "2026-04-21T13:55:00.826Z",
-        "mi": 30.9,
+        "commit": "889a8eb",
+        "timestamp": "2026-04-21T14:55:58.205Z",
+        "mi": 31.1,
         "cognitive": 50,
         "nesting": 8,
-        "lines": 121,
+        "lines": 120,
         "maxCyclomatic": 18,
-        "entropy": 5.44
+        "entropy": 5.43
       },
       "history": [
         {
@@ -22,10 +22,20 @@
           "lines": 121,
           "maxCyclomatic": 18,
           "entropy": 5.44
+        },
+        {
+          "commit": "889a8eb",
+          "timestamp": "2026-04-21T14:55:58.205Z",
+          "mi": 31.1,
+          "cognitive": 50,
+          "nesting": 8,
+          "lines": 120,
+          "maxCyclomatic": 18,
+          "entropy": 5.43
         }
       ],
       "trend": "stable"
     }
   },
-  "capturedAt": "2026-04-21T13:55:05.829Z"
+  "capturedAt": "2026-04-21T14:56:03.215Z"
 }

@@ -14,7 +14,8 @@ async function main() {
   if (args.length === 0) {
     console.log('Usage: mistral-ocr <command> [args]');
     console.log('Commands:');
-    console.log('  ocr <pdf-path>              - Run OCR on PDF (local or URL)');
+    console.log('  ocr <pdf-path> [--text]     - Run OCR on PDF (local or URL)');
+    console.log('    --text                    - Output text only (default: JSON)');
     console.log('  config api_key <value>      - Set API key');
     console.log('  config base_url <value>     - Set base URL');
     console.log('  config show                 - Show current config');
@@ -24,7 +25,8 @@ async function main() {
   const [command, subcommand, ...rest] = args;
 
   if (command === 'ocr') {
-    await runOCR(configDir, subcommand);
+    const outputFormat = rest.includes('--text') ? 'text' : 'json';
+    await runOCR(configDir, subcommand, outputFormat);
   } else if (command === 'config') {
     if (subcommand === 'api_key' && rest.length > 0) {
       const value = rest.join(' ');
@@ -55,7 +57,7 @@ async function main() {
   }
 }
 
-async function runOCR(configDir: string, pdfPath: string) {
+async function runOCR(configDir: string, pdfPath: string, outputFormat: 'json' | 'text' = 'json') {
   if (!pdfPath) {
     console.error('Error: PDF path required');
     process.exit(1);
@@ -78,7 +80,11 @@ async function runOCR(configDir: string, pdfPath: string) {
       model: 'mistral-ocr-latest',
     };
 
-    console.log(JSON.stringify(result, null, 2));
+    if (outputFormat === 'text') {
+      console.log(result.text);
+    } else {
+      console.log(JSON.stringify(result, null, 2));
+    }
   } catch (err: any) {
     console.error(`Error: ${err.message}`);
     process.exit(1);
