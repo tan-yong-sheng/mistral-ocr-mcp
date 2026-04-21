@@ -30,7 +30,6 @@ Extracts text from PDF using Mistral vision model. Outputs markdown with YAML fr
 ---
 model: mistral-ocr-latest
 pages: 35
-confidence: 0.95
 ---
 
 # Extracted markdown content
@@ -102,7 +101,6 @@ Config stored in `~/.mistral-ocr/config.json`. Env vars override file settings.
 Markdown + YAML frontmatter. Frontmatter includes:
 - `model` - OCR model used
 - `pages` - Total pages extracted
-- `confidence` - Extraction confidence score
 
 Content is full markdown with preserved formatting (headers, lists, code blocks, etc). LLM-friendly for analysis, summarization, Q&A.
 
