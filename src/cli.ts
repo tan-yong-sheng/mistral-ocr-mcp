@@ -76,7 +76,7 @@ async function runOCR(configDir: string, pdfPath: string) {
       text: response.pages.map((p: any) => p.markdown).join('\n\n'),
       pages: response.pages.length,
       confidence: 0.95,
-      model: 'mistral-ocr-latest'
+      model: 'mistral-ocr-latest',
     };
 
     console.log(JSON.stringify(result, null, 2));
@@ -95,8 +95,8 @@ async function callMistralOCRAPI(baseUrl: string, apiKey: string, pdfPath: strin
       model: 'mistral-ocr-latest',
       document: {
         type: 'document_url',
-        document_url: pdfPath
-      }
+        document_url: pdfPath,
+      },
     };
 
     const body = JSON.stringify(payload);
@@ -110,8 +110,8 @@ async function callMistralOCRAPI(baseUrl: string, apiKey: string, pdfPath: strin
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(body),
-          'Authorization': `Bearer ${apiKey}`
-        }
+          Authorization: `Bearer ${apiKey}`,
+        },
       },
       (res) => {
         let data = '';
@@ -132,7 +132,7 @@ async function callMistralOCRAPI(baseUrl: string, apiKey: string, pdfPath: strin
   });
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

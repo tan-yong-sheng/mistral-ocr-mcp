@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { z } from "zod";
+import { z } from 'zod';
 import fetch from 'node-fetch';
 import { createRequire } from 'module';
 import { getConfig } from './config.js';
@@ -23,15 +23,15 @@ try {
 }
 
 const server = new McpServer({
-  name: "Mistral OCR MCP",
-  version: packageJson.version
+  name: 'Mistral OCR MCP',
+  version: packageJson.version,
 });
 
 server.tool(
   'ocr_pdf_url',
   'Extract text from PDF via URL using Mistral OCR.',
   {
-    pdf_url: z.string().url().describe("Public URL to PDF file")
+    pdf_url: z.string().url().describe('Public URL to PDF file'),
   },
   async ({ pdf_url }) => {
     try {
@@ -39,15 +39,15 @@ server.tool(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${MISTRAL_API_KEY}`
+          Authorization: `Bearer ${MISTRAL_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'mistral-ocr-latest',
           document: {
             type: 'document_url',
-            document_url: pdf_url
-          }
-        })
+            document_url: pdf_url,
+          },
+        }),
       });
 
       if (!response.ok) {
@@ -55,32 +55,32 @@ server.tool(
         return {
           content: [
             {
-              type: "text",
-              text: `API error: ${response.status} ${errorText}`
-            }
-          ]
+              type: 'text',
+              text: `API error: ${response.status} ${errorText}`,
+            },
+          ],
         };
       }
 
-      const result = await response.json() as any;
+      const result = (await response.json()) as any;
       const text = result.pages.map((p: any) => p.markdown).join('\n\n');
 
       return {
         content: [
           {
-            type: "text",
-            text: text
-          }
-        ]
+            type: 'text',
+            text: text,
+          },
+        ],
       };
     } catch (error: any) {
       return {
         content: [
           {
-            type: "text",
-            text: `Error: ${error.message}`
-          }
-        ]
+            type: 'text',
+            text: `Error: ${error.message}`,
+          },
+        ],
       };
     }
   }

@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const ConfigSchema = z.object({
   api_key: z.string().min(1, 'api_key required').optional(),
-  base_url: z.string().url().default('https://api.mistral.ai/v1')
+  base_url: z.string().url().default('https://api.mistral.ai/v1'),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -24,7 +24,7 @@ export function getConfig(configDir: string = DEFAULT_CONFIG_DIR): Config {
   const merged = {
     ...fileConfig,
     ...(process.env.MISTRAL_API_KEY && { api_key: process.env.MISTRAL_API_KEY }),
-    ...(process.env.MISTRAL_BASE_URL && { base_url: process.env.MISTRAL_BASE_URL })
+    ...(process.env.MISTRAL_BASE_URL && { base_url: process.env.MISTRAL_BASE_URL }),
   };
 
   // 3. Validate and return

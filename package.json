@@ -18,7 +18,8 @@
     "format:write": "prettier \"src/**/*.{ts,js}\" --write",
     "build": "tsc",
     "prebuild": "npm run clean",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky install"
   },
   "bin": {
     "mistral-ocr": "dist/cli.js"
@@ -40,7 +41,10 @@
   "devDependencies": {
     "@types/form-data": "^2.5.0",
     "@types/node": "^20.11.24",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
     "eslint": "^8.57.1",
+    "husky": "^9.1.7",
     "prettier": "^3.8.3",
     "rimraf": "^5.0.10",
     "tsx": "^4.7.1",
