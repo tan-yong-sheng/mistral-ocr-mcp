@@ -3,7 +3,6 @@
 import { getConfig, setConfig, getConfigPath } from './config.js';
 import path from 'path';
 import os from 'os';
-import fs from 'fs';
 import https from 'https';
 import http from 'http';
 

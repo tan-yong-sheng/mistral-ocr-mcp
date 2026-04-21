@@ -1,0 +1,13 @@
+src/
+.git/
+.gitignore
+.eslintrc.json
+.prettierrc.json
+.husky/
+.pi-lens/
+autoresearch.jsonl
+autoresearch.ideas.md
+autoresearch.md
+tsconfig.json
+vitest.config.ts
+*.test.ts

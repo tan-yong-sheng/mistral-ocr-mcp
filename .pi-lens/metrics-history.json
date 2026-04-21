@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "files": {
+    "src\\cli.ts": {
+      "latest": {
+        "commit": "70f8afb",
+        "timestamp": "2026-04-21T13:55:00.826Z",
+        "mi": 30.9,
+        "cognitive": 50,
+        "nesting": 8,
+        "lines": 121,
+        "maxCyclomatic": 18,
+        "entropy": 5.44
+      },
+      "history": [
+        {
+          "commit": "70f8afb",
+          "timestamp": "2026-04-21T13:55:00.826Z",
+          "mi": 30.9,
+          "cognitive": 50,
+          "nesting": 8,
+          "lines": 121,
+          "maxCyclomatic": 18,
+          "entropy": 5.44
+        }
+      ],
+      "trend": "stable"
+    }
+  },
+  "capturedAt": "2026-04-21T13:55:05.829Z"
+}

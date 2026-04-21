@@ -1,6 +1,6 @@
 {
   "name": "mistral-ocr-mcp",
-  "version": "1.0.0",
+  "version": "0.0.6",
   "description": "Mistral OCR CLI + MCP server. Extract text from PDFs via URL.",
   "main": "dist/index.js",
   "exports": {
@@ -18,6 +18,7 @@
     "format:write": "prettier \"src/**/*.{ts,js}\" --write",
     "build": "tsc",
     "prebuild": "npm run clean",
+
     "typecheck": "tsc --noEmit",
     "prepare": "husky install"
   },
@@ -39,10 +40,12 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "esbuild": "^0.28.0",
     "@types/form-data": "^2.5.0",
     "@types/node": "^20.11.24",
     "@typescript-eslint/eslint-plugin": "^8.59.0",
     "@typescript-eslint/parser": "^8.59.0",
+
     "eslint": "^8.57.1",
     "husky": "^9.1.7",
     "prettier": "^3.8.3",
