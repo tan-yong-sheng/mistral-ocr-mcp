@@ -1,6 +1,6 @@
 ---
 name: mistral-ocr-cli
-description: Set up and manage Mistral OCR CLI configuration. Use when initializing the CLI for first-time use, setting API keys, configuring custom endpoints, or troubleshooting config issues. Covers both initial setup (npm install, api_key, base_url) and ongoing config management (show, update, override with env vars).
+description: Set up and manage Mistral OCR CLI. Initialize config, set API keys, run OCR on PDFs (local/URL). Outputs markdown with YAML frontmatter (metadata + extracted text). LLM-friendly format for analysis, summarization, Q&A.
 ---
 
 # Mistral OCR CLI
@@ -10,17 +10,9 @@ description: Set up and manage Mistral OCR CLI configuration. Use when initializ
 ```bash
 npm install -g mistral-ocr-mcp
 mistral-ocr config api_key YOUR_API_KEY
-mistral-ocr config base_url https://api.mistral.ai/v1  # optional
 mistral-ocr config show
+mistral-ocr ocr ./document.pdf > output.md
 ```
-
-## Configuration
-
-Config stored in `~/.mistral-ocr/config.json`. Environment variables override file settings.
-
-**Env vars:**
-- `MISTRAL_API_KEY` - API key (required)
-- `MISTRAL_BASE_URL` - Base URL (optional, defaults to `https://api.mistral.ai/v1`)
 
 ## Commands
 
@@ -30,7 +22,21 @@ Config stored in `~/.mistral-ocr/config.json`. Environment variables override fi
 mistral-ocr ocr <pdf-path>
 ```
 
-Extracts text from PDF using Mistral vision model. Outputs JSON with extracted text + metadata.
+Extracts text from PDF using Mistral vision model. Outputs markdown with YAML frontmatter.
+
+**Output format:**
+
+```yaml
+---
+model: mistral-ocr-latest
+pages: 35
+confidence: 0.95
+---
+
+# Extracted markdown content
+
+Full text with headers, lists, formatting preserved...
+```
 
 **Examples:**
 
@@ -38,22 +44,19 @@ Extracts text from PDF using Mistral vision model. Outputs JSON with extracted t
 # Local file
 mistral-ocr ocr ./document.pdf
 
-# With output file
-mistral-ocr ocr ./document.pdf > output.json
+# Save to markdown
+mistral-ocr ocr ./document.pdf > output.md
 
-# URL
-mistral-ocr ocr https://example.com/document.pdf
-```
+# URL (arxiv, papers)
+mistral-ocr ocr https://arxiv.org/pdf/2501.00001.pdf > paper.md
 
-**Output format:**
+# Pipe to LLM
+mistral-ocr ocr ./document.pdf | llm -m claude-opus "summarize this"
 
-```json
-{
-  "text": "extracted text content",
-  "pages": 5,
-  "confidence": 0.95,
-  "model": "mistral-ocr-latest"
-}
+# Batch process
+for pdf in *.pdf; do
+  mistral-ocr ocr "$pdf" > "${pdf%.pdf}.md"
+done
 ```
 
 ### Set API Key
@@ -80,28 +83,38 @@ mistral-ocr config show
 
 Displays current settings + config file location.
 
-## Priority
+## Configuration
 
+Config stored in `~/.mistral-ocr/config.json`. Env vars override file settings.
+
+**Env vars:**
+- `MISTRAL_API_KEY` - API key (required)
+- `MISTRAL_OCR_CONFIG_DIR` - Config directory (default: `~/.mistral-ocr`)
+- `MISTRAL_OCR_BASE_URL` - API endpoint (default: `https://api.mistral.ai/v1`)
+
+**Priority:**
 1. Environment variables (highest)
 2. Config file
 3. Defaults (base_url only)
 
-## Examples
+## Output Format
 
-```bash
-# Setup
-mistral-ocr config api_key sk-...
-mistral-ocr config base_url https://api.mistral.ai/v1
-mistral-ocr config show
+Markdown + YAML frontmatter. Frontmatter includes:
+- `model` - OCR model used
+- `pages` - Total pages extracted
+- `confidence` - Extraction confidence score
 
-# OCR workflow
-mistral-ocr ocr ./invoice.pdf > invoice.json
-cat invoice.json | jq '.text'
+Content is full markdown with preserved formatting (headers, lists, code blocks, etc). LLM-friendly for analysis, summarization, Q&A.
 
-# Override with env var
-export MISTRAL_API_KEY=sk-override
-mistral-ocr ocr ./document.pdf
-```
+## Use Cases
+
+- Extract text from PDFs for indexing/search
+- Convert scanned documents to markdown
+- Batch process invoices, receipts, contracts
+- Feed OCR output to LLMs for analysis
+- Process academic papers (arxiv, research PDFs)
+- Extract structured data from forms/documents
+- Archive PDFs as searchable markdown
 
 ## Troubleshooting
 

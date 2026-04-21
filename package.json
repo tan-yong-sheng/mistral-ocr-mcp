@@ -1,6 +1,6 @@
 {
   "name": "mistral-ocr-mcp",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Mistral OCR CLI + MCP server. Extract text from PDFs via URL.",
   "main": "dist/index.js",
   "exports": {
