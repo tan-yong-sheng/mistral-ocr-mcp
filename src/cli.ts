@@ -14,18 +14,21 @@ async function main() {
   if (args.length === 0) {
     console.log('Usage: mistral-ocr <command> [args]');
     console.log('Commands:');
-    console.log('  ocr <pdf-path>              - Run OCR on PDF (local or URL)');
+    console.log('  ocr <pdf-path> [--model MODEL]  - Run OCR on PDF (local or URL)');
     console.log('    Output: Markdown with YAML frontmatter');
-    console.log('  config api_key <value>      - Set API key');
-    console.log('  config base_url <value>     - Set base URL');
-    console.log('  config show                 - Show current config');
+    console.log('  config api_key <value>          - Set API key');
+    console.log('  config base_url <value>         - Set base URL');
+    console.log('  config model <value>            - Set default model');
+    console.log('  config show                     - Show current config');
     process.exit(0);
   }
 
   const [command, subcommand, ...rest] = args;
 
   if (command === 'ocr') {
-    await runOCR(configDir, subcommand);
+    const modelIdx = rest.indexOf('--model');
+    const model = modelIdx >= 0 ? rest[modelIdx + 1] : undefined;
+    await runOCR(configDir, subcommand, model);
   } else if (command === 'config') {
     if (subcommand === 'api_key' && rest.length > 0) {
       const value = rest.join(' ');
@@ -35,12 +38,17 @@ async function main() {
       const value = rest.join(' ');
       setConfig(configDir, { base_url: value });
       console.log(`✓ Base URL set`);
+    } else if (subcommand === 'model' && rest.length > 0) {
+      const value = rest.join(' ');
+      setConfig(configDir, { model: value });
+      console.log(`✓ Model set`);
     } else if (subcommand === 'show') {
       try {
         const config = getConfig(configDir);
         console.log('Current config:');
         console.log(`  api_key: ${config.api_key?.substring(0, 8)}...`);
         console.log(`  base_url: ${config.base_url}`);
+        console.log(`  model: ${config.model || 'mistral-ocr-latest'}`);
         console.log(`  location: ${getConfigPath(configDir)}`);
       } catch (err: any) {
         console.error(`Error: ${err.message}`);
@@ -56,7 +64,7 @@ async function main() {
   }
 }
 
-async function runOCR(configDir: string, pdfPath: string) {
+async function runOCR(configDir: string, pdfPath: string, cliModel?: string) {
   if (!pdfPath) {
     console.error('Error: PDF path required');
     process.exit(1);
@@ -70,19 +78,18 @@ async function runOCR(configDir: string, pdfPath: string) {
     }
 
     const baseUrl = config.base_url || 'https://api.mistral.ai/v1';
-    const response = await callMistralOCRAPI(baseUrl, config.api_key, pdfPath);
+    const model = process.env.MISTRAL_MODEL || cliModel || config.model || 'mistral-ocr-latest';
+    const response = await callMistralOCRAPI(baseUrl, config.api_key, pdfPath, model);
 
     const result = {
       text: response.pages.map((p: any) => p.markdown).join('\n\n'),
       pages: response.pages.length,
-      confidence: 0.95,
-      model: 'mistral-ocr-latest',
+      model: response.model || 'mistral-ocr-latest',
     };
 
     const frontmatter = `---
 model: ${result.model}
 pages: ${result.pages}
-confidence: ${result.confidence}
 ---
 
 ${result.text}`;
@@ -94,13 +101,18 @@ ${result.text}`;
   }
 }
 
-async function callMistralOCRAPI(baseUrl: string, apiKey: string, pdfPath: string): Promise<any> {
+async function callMistralOCRAPI(
+  baseUrl: string,
+  apiKey: string,
+  pdfPath: string,
+  model: string
+): Promise<any> {
   return new Promise((resolve, reject) => {
     const url = new URL(`${baseUrl}/ocr`);
     const protocol = url.protocol === 'https:' ? https : http;
 
     const payload = {
-      model: 'mistral-ocr-latest',
+      model,
       document: {
         type: 'document_url',
         document_url: pdfPath,
