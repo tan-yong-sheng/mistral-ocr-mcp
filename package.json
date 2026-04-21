@@ -34,9 +34,7 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",
-    "form-data": "^4.0.5",
     "node-fetch": "^3.3.2",
-    "pdf2image": "^1.2.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {
