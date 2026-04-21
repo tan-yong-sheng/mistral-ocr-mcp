@@ -19,10 +19,12 @@ mistral-ocr ocr ./document.pdf > output.md
 ### Run OCR on PDF
 
 ```bash
-mistral-ocr ocr <pdf-path>
+mistral-ocr ocr <pdf-path> [--model MODEL]
 ```
 
 Extracts text from PDF using Mistral vision model. Outputs markdown with YAML frontmatter.
+
+`--model` optional. Defaults to `mistral-ocr-latest`. Override via `MISTRAL_MODEL` env var.
 
 **Output format:**
 
@@ -48,6 +50,12 @@ mistral-ocr ocr ./document.pdf > output.md
 
 # URL (arxiv, papers)
 mistral-ocr ocr https://arxiv.org/pdf/2501.00001.pdf > paper.md
+
+# Custom model via flag
+mistral-ocr ocr ./document.pdf --model mistral-ocr-2512
+
+# Custom model via env var
+MISTRAL_MODEL=mistral-ocr-2512 mistral-ocr ocr ./document.pdf
 
 # Pipe to LLM
 mistral-ocr ocr ./document.pdf | llm -m claude-opus "summarize this"
@@ -89,12 +97,14 @@ Config stored in `~/.mistral-ocr/config.json`. Env vars override file settings.
 **Env vars:**
 - `MISTRAL_API_KEY` - API key (required)
 - `MISTRAL_OCR_CONFIG_DIR` - Config directory (default: `~/.mistral-ocr`)
-- `MISTRAL_OCR_BASE_URL` - API endpoint (default: `https://api.mistral.ai/v1`)
+- `MISTRAL_BASE_URL` - API endpoint (default: `https://api.mistral.ai/v1`)
+- `MISTRAL_MODEL` - OCR model (default: `mistral-ocr-latest`)
 
-**Priority:**
-1. Environment variables (highest)
-2. Config file
-3. Defaults (base_url only)
+**Priority (model):**
+1. `MISTRAL_MODEL` env var (highest)
+2. `--model` CLI flag
+3. Config file (`mistral-ocr config model`)
+4. Default: `mistral-ocr-latest`
 
 ## Output Format
 
@@ -122,3 +132,8 @@ Content is full markdown with preserved formatting (headers, lists, code blocks,
 
 **Custom API endpoint**
 - `mistral-ocr config base_url https://custom.api.com/v1`
+
+**Custom model**
+- Via flag: `mistral-ocr ocr file.pdf --model mistral-ocr-2512`
+- Via config: `mistral-ocr config model mistral-ocr-2512`
+- Via env: `MISTRAL_MODEL=mistral-ocr-2512 mistral-ocr ocr file.pdf`
