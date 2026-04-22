@@ -1,66 +1,68 @@
 {
-  "name": "mistral-ai-mcp",
-  "version": "0.0.1",
-  "description": "Mistral AI MCP server. OCR, TTS, STT via Voxtral.",
-  "main": "dist/index.js",
-  "exports": {
-    ".": "./dist/index.js"
-  },
-  "type": "module",
-  "scripts": {
-    "clean": "rimraf dist",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
-    "test": "vitest run",
-    "lint": "eslint \"src/**/*.{ts,js}\" --max-warnings=0",
-    "format": "prettier \"src/**/*.{ts,js}\" --check",
-    "format:write": "prettier \"src/**/*.{ts,js}\" --write",
-    "build": "tsc",
-    "prebuild": "npm run clean",
-    "typecheck": "tsc --noEmit",
-    "prepare": "husky install"
-  },
-  "files": [
-    "dist",
-    "skills",
-    "README.md"
-  ],
-  "bin": {
-    "mistral-ai": "dist/cli.js"
-  },
-  "keywords": [
-    "mcp",
-    "mistral",
-    "ocr",
-    "pdf",
-    "text-extraction"
-  ],
-  "author": "tan-yong-sheng",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/tan-yong-sheng/mistral-ai-mcp.git"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.13.1",
-    "node-fetch": "^3.3.2",
-    "zod": "^3.22.4"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "devDependencies": {
-    "esbuild": "^0.28.0",
-    "@types/form-data": "^2.5.0",
-    "@types/node": "^20.11.24",
-    "@typescript-eslint/eslint-plugin": "^8.59.0",
-    "@typescript-eslint/parser": "^8.59.0",
-    "eslint": "^8.57.1",
-    "husky": "^9.1.7",
-    "prettier": "^3.8.3",
-    "rimraf": "^5.0.10",
-    "tsx": "^4.7.1",
-    "typescript": "^5.3.3",
-    "vitest": "^4.1.5"
-  }
+	"name": "mistral-ai-mcp",
+	"version": "0.0.1",
+	"description": "Mistral AI MCP server. OCR, TTS, STT via Voxtral.",
+	"main": "dist/index.js",
+	"exports": {
+		".": "./dist/index.js"
+	},
+	"type": "module",
+	"scripts": {
+		"clean": "rimraf dist",
+		"start": "node dist/index.js",
+		"dev": "tsx src/index.ts",
+		"test": "vitest run",
+		"lint": "eslint \"src/**/*.{ts,js}\" --max-warnings=0",
+		"format": "prettier \"src/**/*.{ts,js}\" --check",
+		"format:write": "prettier \"src/**/*.{ts,js}\" --write",
+		"build": "tsc",
+		"prebuild": "npm run clean",
+		"typecheck": "tsc --noEmit",
+		"prepare": "husky",
+		"precommit": "npm run lint && npm run format",
+		"prepush": "npm run typecheck && npm run test"
+	},
+	"files": [
+		"dist",
+		"skills",
+		"README.md"
+	],
+	"bin": {
+		"mistral-ai": "dist/cli.js"
+	},
+	"keywords": [
+		"mcp",
+		"mistral",
+		"ocr",
+		"pdf",
+		"text-extraction"
+	],
+	"author": "tan-yong-sheng",
+	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/tan-yong-sheng/mistral-ai-mcp.git"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.13.1",
+		"node-fetch": "^3.3.2",
+		"zod": "^3.22.4"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"devDependencies": {
+		"esbuild": "^0.28.0",
+		"@types/form-data": "^2.5.0",
+		"@types/node": "^20.11.24",
+		"@typescript-eslint/eslint-plugin": "^8.59.0",
+		"@typescript-eslint/parser": "^8.59.0",
+		"eslint": "^8.57.1",
+		"husky": "^9.1.7",
+		"prettier": "^3.8.3",
+		"rimraf": "^5.0.10",
+		"tsx": "^4.7.1",
+		"typescript": "^5.3.3",
+		"vitest": "^4.1.5"
+	}
 }
