@@ -100,6 +100,7 @@ export async function transcribeAudio(
           res.on('data', (chunk) => (data += chunk));
           res.on('end', () => {
             if (res.statusCode !== 200) {
+              console.error(`[STT] API error ${res.statusCode}:`, data);
               reject(new Error(`STT API error: ${res.statusCode} ${data}`));
             } else {
               const response = JSON.parse(data) as SttResponse;

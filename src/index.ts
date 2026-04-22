@@ -127,7 +127,7 @@ async function init() {
           content: [
             {
               type: 'text',
-              text: `Error: ${error.message}`,
+              text: error.message,
             },
           ],
         };
@@ -203,7 +203,7 @@ async function init() {
           content: [
             {
               type: 'text',
-              text: `Error: ${error.message}`,
+              text: error.message,
             },
           ],
         };
@@ -244,7 +244,7 @@ async function init() {
           content: [
             {
               type: 'text',
-              text: `Error: ${error.message}`,
+              text: error.message,
             },
           ],
         };
