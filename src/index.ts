@@ -34,15 +34,14 @@ try {
 
 // Initialize voices before defining tools
 async function init() {
-  // Fetch voices at startup, cache for session
-  let cachedVoiceIds: string[] = ['alice', 'bob', 'charlie'];
+  let cachedVoiceIds: string[] = [];
 
   try {
     const voices = await listVoices(MISTRAL_BASE_URL, MISTRAL_API_KEY);
     cachedVoiceIds = voices.map((v) => v.voice_id);
     console.error(`[MCP] Loaded ${cachedVoiceIds.length} voices`);
-  } catch (err) {
-    console.error(`[MCP] Failed to fetch voices, using defaults`);
+  } catch (err: any) {
+    console.error(`[MCP] Voice fetch failed: ${err.message}. Continuing without voice list.`);
   }
 
   const languages = listLanguages();
@@ -164,11 +163,16 @@ async function init() {
           };
         }
 
-        // If ref_audio_url, download to temp file
-        let refAudioPath: string | undefined;
-        if (ref_audio_url) {
-          // Download logic here
-          refAudioPath = '/tmp/ref_audio.wav'; // placeholder
+        // ref_audio_url must be HTTPS. MCP tools cannot download arbitrary URLs.
+        if (ref_audio_url && !ref_audio_url.startsWith('https://')) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'Error: ref_audio_url must be HTTPS URL',
+              },
+            ],
+          };
         }
 
         const result = await generateSpeech(
@@ -176,15 +180,21 @@ async function init() {
           MISTRAL_API_KEY,
           text,
           voice_id,
-          refAudioPath,
+          ref_audio_url,
           (format as any) || 'mp3'
         );
+
+        // Save audio to temp file
+        const audioBuffer = Buffer.from(result.audio_data, 'base64');
+        const ext = (format as any) || 'mp3';
+        const outputPath = `/tmp/speech_${Date.now()}.${ext}`;
+        fs.writeFileSync(outputPath, audioBuffer);
 
         return {
           content: [
             {
               type: 'text',
-              text: `Speech generated (${result.model}). Audio data (base64): ${result.audio_data.substring(0, 100)}...`,
+              text: `Speech generated (${result.model}). Saved to: ${outputPath}`,
             },
           ],
         };
@@ -206,22 +216,19 @@ async function init() {
     `Transcribe audio to text using Voxtral STT. Supported languages: ${languageCodes}`,
     {
       audio_source: z.string().describe('Audio file path or HTTPS URL'),
-      realtime: z
-        .boolean()
-        .optional()
-        .describe('Use realtime model (<200ms latency) instead of batch'),
-      diarize: z.boolean().optional().describe('Enable speaker diarization'),
+      diarize: z.boolean().optional().describe('Enable speaker diarization (batch mode only)'),
       language: z.string().optional().describe(`Language code. Supported: ${languageCodes}`),
+      model: z.string().optional().describe('STT model. Default: voxtral-mini-latest'),
     },
-    async ({ audio_source, realtime, diarize, language }) => {
+    async ({ audio_source, diarize, language, model }) => {
       try {
         const result = await transcribeAudio(
           MISTRAL_BASE_URL,
           MISTRAL_API_KEY,
           audio_source,
-          realtime || false,
           diarize || false,
-          language
+          language,
+          model
         );
 
         return {

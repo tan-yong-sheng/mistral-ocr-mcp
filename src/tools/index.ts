@@ -4,3 +4,4 @@ export * from './stt.js';
 export * from './types.js';
 export * from './voices.js';
 export * from './languages.js';
+export * from './language-validator.js';

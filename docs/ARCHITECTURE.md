@@ -178,8 +178,7 @@ Environment Variables > Config File > Defaults
 
 **Models:**
 
-- Batch: `voxtral-mini-latest`
-- Realtime: `voxtral-realtime` (<200ms latency)
+- `voxtral-mini-latest`
 
 **Features:**
 
@@ -214,7 +213,6 @@ server.tool('tts_speech', {
 ```typescript
 server.tool('stt_transcribe', {
   audio_source: z.string().describe('Audio file path or HTTPS URL'),
-  realtime: z.boolean().optional().describe('Use realtime model'),
   diarize: z.boolean().optional().describe('Enable speaker diarization'),
   language: z.string().optional().describe('Language code (e.g., "en")'),
 });

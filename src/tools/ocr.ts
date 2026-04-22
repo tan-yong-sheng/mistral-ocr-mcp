@@ -5,6 +5,26 @@ import { OcrResponse } from './types.js';
 export const SUPPORTED_DOCS = ['pdf', 'pptx', 'docx', 'xlsx'];
 export const SUPPORTED_IMAGES = ['png', 'jpeg', 'jpg', 'avif'];
 
+export function validateDocumentType(filePath: string): boolean {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  return [...SUPPORTED_DOCS, ...SUPPORTED_IMAGES].includes(ext || '');
+}
+
+function getMimeType(filePath: string): string {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    pdf: 'application/pdf',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    png: 'image/png',
+    jpeg: 'image/jpeg',
+    jpg: 'image/jpeg',
+    avif: 'image/avif',
+  };
+  return mimeTypes[ext || ''] || 'application/octet-stream';
+}
+
 export async function uploadFileToMistral(
   baseUrl: string,
   apiKey: string,
@@ -18,9 +38,10 @@ export async function uploadFileToMistral(
     const boundary = '----FormBoundary' + Date.now();
     const parts: Buffer[] = [];
 
+    const mimeType = getMimeType(fileName);
     parts.push(
       Buffer.from(
-        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${fileName}"\r\nContent-Type: application/pdf\r\n\r\n`
+        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${fileName}"\r\nContent-Type: ${mimeType}\r\n\r\n`
       )
     );
     parts.push(fileBuffer);
@@ -156,9 +177,4 @@ export async function callOCRAPI(
     req.write(body);
     req.end();
   });
-}
-
-export function validateDocumentType(filePath: string): boolean {
-  const ext = filePath.split('.').pop()?.toLowerCase();
-  return ext ? [...SUPPORTED_DOCS, ...SUPPORTED_IMAGES].includes(ext) : false;
 }

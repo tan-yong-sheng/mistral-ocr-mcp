@@ -1,4 +1,5 @@
 # Dependencies
+.pi-lens/
 node_modules/
 package-lock.json
 yarn.lock

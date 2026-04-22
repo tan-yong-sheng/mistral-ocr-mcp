@@ -7,6 +7,7 @@ const ConfigSchema = z.object({
   api_key: z.string().min(1, 'api_key required').optional(),
   base_url: z.string().url().default('https://api.mistral.ai/v1'),
   model: z.string().optional(),
+  stt_model: z.string().optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

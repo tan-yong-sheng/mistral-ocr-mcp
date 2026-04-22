@@ -402,7 +402,7 @@ server.tool(
   'Generate speech from text using Voxtral TTS. Supports voice cloning with reference audio.',
   {
     text: z.string().describe('Text to convert to speech'),
-    voice_id: z.string().optional().describe('Preset voice ID (e.g., "alice", "bob")'),
+    voice_id: z.string().optional().describe('Preset voice ID (e.g., "en_paul_sad", "en_paul_neutral", "en_paul_happy")'),
     ref_audio_url: z
       .string()
       .optional()

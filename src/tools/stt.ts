@@ -1,44 +1,87 @@
 import https from 'https';
 import http from 'http';
 import fs from 'fs';
+import path from 'path';
 import { SttResponse } from './types.js';
 
 export async function transcribeAudio(
   baseUrl: string,
   apiKey: string,
   audioSource: string,
-  realtime: boolean = false,
   diarize: boolean = false,
-  language?: string
+  language?: string,
+  model: string = 'voxtral-mini-latest'
 ): Promise<SttResponse> {
   return new Promise((resolve, reject) => {
     try {
       const url = new URL(`${baseUrl}/audio/transcriptions`);
       const protocol = url.protocol === 'https:' ? https : http;
 
-      const model = realtime ? 'voxtral-realtime' : 'voxtral-mini-latest';
+      // Batch transcription only. Realtime requires WebSocket/streaming.
 
-      const payload: Record<string, unknown> = {
-        model,
-        diarize,
-      };
+      // Build multipart/form-data body
+      const boundary = '----FormBoundary' + Date.now();
+      const parts: Buffer[] = [];
 
-      if (language) {
-        payload.language = language;
+      // Add model field
+      parts.push(
+        Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\n${model}\r\n`
+        )
+      );
+
+      // Add diarize field
+      parts.push(
+        Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="diarize"\r\n\r\n${diarize ? 'true' : 'false'}\r\n`
+        )
+      );
+
+      // Add timestamp_granularities when diarize=true (batch mode only)
+      if (diarize) {
+        parts.push(
+          Buffer.from(
+            `--${boundary}\r\nContent-Disposition: form-data; name="timestamp_granularities"\r\n\r\nsegment\r\n`
+          )
+        );
       }
 
+      // Add language if provided
+      if (language) {
+        parts.push(
+          Buffer.from(
+            `--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\n${language}\r\n`
+          )
+        );
+      }
+
+      // Add file or file_url
       if (audioSource.startsWith('http://') || audioSource.startsWith('https://')) {
-        payload.file_url = audioSource;
+        parts.push(
+          Buffer.from(
+            `--${boundary}\r\nContent-Disposition: form-data; name="file_url"\r\n\r\n${audioSource}\r\n`
+          )
+        );
       } else {
         if (!fs.existsSync(audioSource)) {
           reject(new Error(`Audio file not found: ${audioSource}`));
           return;
         }
         const audioBuffer = fs.readFileSync(audioSource);
-        payload.file = audioBuffer.toString('base64');
+        const fileName = path.basename(audioSource);
+        parts.push(
+          Buffer.from(
+            `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${fileName}"\r\nContent-Type: audio/mpeg\r\n\r\n`
+          )
+        );
+        parts.push(audioBuffer);
+        parts.push(Buffer.from('\r\n'));
       }
 
-      const body = JSON.stringify(payload);
+      // Add closing boundary
+      parts.push(Buffer.from(`--${boundary}--\r\n`));
+
+      const body = Buffer.concat(parts);
 
       const req = protocol.request(
         {
@@ -47,8 +90,8 @@ export async function transcribeAudio(
           path: url.pathname + url.search,
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(body),
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            'Content-Length': body.length,
             Authorization: `Bearer ${apiKey}`,
           },
         },

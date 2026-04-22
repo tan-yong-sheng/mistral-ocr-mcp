@@ -122,7 +122,7 @@ mistral-ai-mcp
 
 | Tool             | Description               |
 | ---------------- | ------------------------- |
-| `ocr_pdf_url`    | Extract text from PDF URL |
+| `ocr_pdf`    | Extract text from PDF sources |
 | `tts_speech`     | Generate speech from text |
 | `stt_transcribe` | Transcribe audio to text  |
 

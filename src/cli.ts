@@ -10,9 +10,9 @@ import {
   callOCRAPI,
   generateSpeech,
   transcribeAudio,
-  validateDocumentType as _validateDocumentType,
   listVoices,
   listLanguages,
+  validateLanguageCode,
 } from './tools/index.js';
 
 const configDir = process.env.MISTRAL_AI_CONFIG_DIR || path.join(os.homedir(), '.mistral-ai');
@@ -52,38 +52,33 @@ async function runSTTLanguages(args: string[]) {
     process.exit(0);
   }
 
-  try {
-    const languages = listLanguages();
-    const asJson = args.includes('--json');
+  const languages = listLanguages();
+  const asJson = args.includes('--json');
 
-    if (asJson) {
-      console.log(JSON.stringify(languages, null, 2));
-    } else {
-      console.log('Supported STT languages:');
-      for (const lang of languages) {
-        console.log(`  ${lang.code.padEnd(6)} ${lang.name}`);
-      }
+  if (asJson) {
+    console.log(JSON.stringify(languages, null, 2));
+  } else {
+    console.log('Supported STT languages:');
+    for (const lang of languages) {
+      console.log(`  ${lang.code.padEnd(6)} ${lang.name}`);
     }
-  } catch (err: any) {
-    console.error(`Error: ${err.message}`);
-    process.exit(1);
   }
 }
 
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length === 0) {
+  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     console.log('Usage: mistral-ai <command> [args]');
     console.log('Commands:');
     console.log('  ocr <file-or-url> [--model MODEL] [--table-format markdown|html]');
     console.log('  tts <text> [--voice-id ID | --ref-audio FILE] [--format FORMAT]');
     console.log('  tts voices [--json]           List available TTS voices');
-    console.log('  stt <audio> [--realtime] [--diarize] [--language LANG]');
+    console.log('  stt <audio> [--diarize] [--language LANG] [--model MODEL]');
     console.log('  stt languages                List supported STT languages');
     console.log('  config api_key <value>');
     console.log('  config base_url <value>');
-    console.log('  config model <value>');
+    console.log('  config stt_model <value>');
     console.log('  config show');
     process.exit(0);
   }
@@ -117,6 +112,10 @@ async function main() {
       const value = rest.join(' ');
       setConfig(configDir, { model: value });
       console.log(`✓ Model set`);
+    } else if (subcommand === 'stt_model' && rest.length > 0) {
+      const value = rest.join(' ');
+      setConfig(configDir, { stt_model: value });
+      console.log(`✓ STT model set`);
     } else if (subcommand === 'show') {
       try {
         const config = getConfig(configDir);
@@ -124,6 +123,7 @@ async function main() {
         console.log(`  api_key: ${config.api_key?.substring(0, 8)}...`);
         console.log(`  base_url: ${config.base_url}`);
         console.log(`  model: ${config.model || 'mistral-ocr-latest'}`);
+        console.log(`  stt_model: ${config.stt_model || 'voxtral-mini-latest'}`);
         console.log(`  location: ${getConfigPath(configDir)}`);
       } catch (err: any) {
         console.error(`Error: ${err.message}`);
@@ -139,7 +139,7 @@ async function main() {
   }
 }
 
-function requireConfig(configDir: string) {
+function requireConfig(configDir: string): { config: any; baseUrl: string; apiKey: string } {
   const config = getConfig(configDir);
   if (!config.api_key) {
     console.error('Error: MISTRAL_API_KEY required');
@@ -155,7 +155,9 @@ async function runTTS(configDir: string, text: string, args: string[]) {
       'Usage: mistral-ai tts <text> [--voice-id ID | --ref-audio FILE] [--format FORMAT]'
     );
     console.log('Options:');
-    console.log('  --voice-id ID      Preset voice ID (e.g., "alice", "bob")');
+    console.log(
+      '  --voice-id ID      Preset voice ID (e.g., "en_paul_sad", "en_paul_neutral", "en_paul_happy")'
+    );
     console.log('  --ref-audio FILE   Reference audio file for voice cloning');
     console.log('  --format FORMAT    Output format: mp3, wav, pcm, flac, opus (default: mp3)');
     process.exit(0);
@@ -177,7 +179,15 @@ async function runTTS(configDir: string, text: string, args: string[]) {
     }
 
     const response = await generateSpeech(baseUrl, apiKey, text, voiceId, refAudio, format);
-    console.log(response.audio_data);
+    if (!response.audio_data) {
+      console.error('Error: Empty audio response');
+      process.exit(1);
+    }
+    const audioBuffer = Buffer.from(response.audio_data, 'base64');
+    const ext = format || 'mp3';
+    const outputPath = `speech_${Date.now()}.${ext}`;
+    fs.writeFileSync(outputPath, audioBuffer);
+    console.log(`✓ Saved to ${outputPath}`);
   } catch (err: any) {
     console.error(`Error: ${err.message}`);
     process.exit(1);
@@ -188,38 +198,49 @@ async function runSTT(configDir: string, audioSource: string, args: string[]) {
   if (!audioSource || audioSource === '--help' || args.includes('--help')) {
     console.log('Usage: mistral-ai stt <audio-file-or-url> [options]');
     console.log('Options:');
-    console.log('  --realtime         Use realtime model (<200ms latency)');
-    console.log('  --diarize          Enable speaker diarization');
+    console.log('  --diarize          Enable speaker diarization (batch mode only)');
     console.log('  --language LANG    Language code (e.g., "en", "fr")');
+    console.log('  --model MODEL      STT model (default: voxtral-mini-latest)');
     process.exit(0);
   }
 
   try {
-    const { apiKey, baseUrl } = requireConfig(configDir);
-    const realtime = args.includes('--realtime');
+    const { apiKey, baseUrl, config } = requireConfig(configDir);
     const diarize = args.includes('--diarize');
     const langIdx = args.indexOf('--language');
+    const modelIdx = args.indexOf('--model');
     const language = langIdx >= 0 ? args[langIdx + 1] : undefined;
+    const cliModel = modelIdx >= 0 ? args[modelIdx + 1] : undefined;
+    const model = cliModel || process.env.STT_MODEL || config.stt_model || 'voxtral-mini-latest';
 
-    const response = await transcribeAudio(
-      baseUrl,
-      apiKey,
-      audioSource,
-      realtime,
-      diarize,
-      language
-    );
+    if (language) {
+      const validation = validateLanguageCode(language);
+      if (!validation.valid) {
+        console.error(`Error: ${validation.error}`);
+        process.exit(1);
+      }
+    }
+
+    const response = await transcribeAudio(baseUrl, apiKey, audioSource, diarize, language, model);
+    if (!response.text) {
+      console.error('Error: Empty transcription response');
+      process.exit(1);
+    }
     console.log(response.text);
   } catch (err: any) {
     console.error(`Error: ${err.message}`);
     process.exit(1);
   }
 }
-
 async function runOCR(configDir: string, pdfPath: string, args: string[]) {
-  if (!pdfPath) {
-    console.error('Error: PDF path required');
-    process.exit(1);
+  if (!pdfPath || pdfPath === '--help' || args.includes('--help')) {
+    console.log(
+      'Usage: mistral-ai ocr <file-or-url> [--model MODEL] [--table-format markdown|html]'
+    );
+    console.log('Options:');
+    console.log('  --model MODEL           OCR model (default: mistral-ocr-latest)');
+    console.log('  --table-format FORMAT   Table format: markdown or html (default: markdown)');
+    process.exit(0);
   }
 
   try {
@@ -228,7 +249,7 @@ async function runOCR(configDir: string, pdfPath: string, args: string[]) {
     const tableFormatIdx = args.indexOf('--table-format');
     const cliModel = modelIdx >= 0 ? args[modelIdx + 1] : undefined;
     const tableFormat = tableFormatIdx >= 0 ? (args[tableFormatIdx + 1] as any) : undefined;
-    const model = process.env.MISTRAL_MODEL || cliModel || config.model || 'mistral-ocr-latest';
+    const model = cliModel || process.env.MISTRAL_MODEL || config.model || 'mistral-ocr-latest';
 
     // Local file → upload → get signed URL
     let documentUrl = pdfPath;

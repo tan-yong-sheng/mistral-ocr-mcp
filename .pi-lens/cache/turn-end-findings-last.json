@@ -1,3 +1,0 @@
-{
-  "signature": "src/cli.ts::🕸️ Impact cascade from edited file:\nChanged symbols: runTTSVoices, runSTTLanguages, main, requireConfig, runTTS (+2 more)\nDirect callers: cli.ts\nRisk: high complexity, high fanout"
-}

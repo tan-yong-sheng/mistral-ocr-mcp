@@ -1,6 +1,6 @@
 ---
 name: mistral-ai-cli
-description: Mistral AI CLI + MCP server. OCR documents, TTS text-to-speech, STT speech-to-text. Outputs markdown/JSON/audio. LLM-friendly format for analysis.
+description: Mistral AI CLI. OCR (PDFs local/URL), TTS (text→speech w/ voice cloning), STT (audio→text w/ diarization). List voices/languages. Config API key, base URL, model. Outputs markdown w/ YAML frontmatter.
 ---
 
 # Mistral AI CLI
@@ -13,18 +13,7 @@ npm install -g mistral-ai-mcp
 
 ## Commands
 
-```bash
-mistral-ai ocr <file-or-url>    # Extract text from documents/images
-mistral-ai tts <text>            # Generate speech from text
-mistral-ai stt <audio>           # Transcribe audio to text
-mistral-ai config ...            # Manage configuration
-```
-
----
-
-# OCR
-
-## Run OCR on Document
+### OCR: Extract text from PDF
 
 ```bash
 mistral-ai ocr <pdf-path> [--model MODEL] [--table-format markdown|html]
@@ -34,208 +23,186 @@ Extract text from PDF → markdown w/ YAML frontmatter.
 
 **Input:** Local file or HTTPS URL.
 
-**Supported formats:** PDF, DOCX, PPTX, XLSX, PNG, JPEG, AVIF
-
 **Output format:**
 
 ```yaml
 ---
-model: mistral-ai-latest
+model: mistral-ocr-latest
 pages: 35
 ---
+
 # Extracted markdown content
 
 Full text with headers, lists, formatting preserved...
 ```
 
+### TTS: Text to speech
+
+```bash
+mistral-ai tts <text> [--voice-id ID | --ref-audio FILE] [--format FORMAT]
+```
+
+Voice cloning: `--ref-audio` (5-25s audio file) → custom voice. Formats: mp3, wav, pcm, flac, opus.
+
+**Output:** Binary audio file `speech_${timestamp}.${format}` in current dir.
+
+### List TTS voices
+
+```bash
+mistral-ai tts voices [--json]
+```
+
+Fetches available voices from API. `--json` for structured output.
+
+### STT: Speech to text
+
+```bash
+mistral-ai stt <audio> [--diarize] [--language LANG] [--model MODEL]
+```
+
+`--diarize` → speaker labels (batch mode only). `--language` → lang code (en, fr, es, etc). `--model` → STT model (default: voxtral-mini-latest).
+
+### List STT languages
+
+```bash
+mistral-ai stt languages [--json]
+```
+
+Supported: en, fr, es, de, it, pt, nl, pl, ru, zh, ja, ko, ar, hi, tr.
+
 ### Examples
 
 ```bash
-# Local PDF
-mistral-ai ocr ./document.pdf > output.md
+# OCR local PDF
+mistral-ai ocr ./document.pdf > /tmp/output.md
 
-# HTTPS URL
-mistral-ai ocr https://arxiv.org/pdf/2501.00001.pdf > paper.md
+# OCR from URL
+mistral-ai ocr https://arxiv.org/pdf/2501.00001.pdf > /tmp/paper.md
 
-# Custom model (flag)
-mistral-ai ocr ./document.pdf --model mistral-ai-latest
+# TTS w/ preset voice
+mistral-ai tts "Hello world" --voice-id alice > /tmp/speech.mp3
 
-# Custom model (env var)
-MISTRAL_MODEL=mistral-ai-latest mistral-ai ocr ./document.pdf
+# TTS w/ voice cloning
+mistral-ai tts "Custom message" --ref-audio my_voice.wav > /tmp/cloned.mp3
 
-# Table format
-mistral-ai ocr ./document.pdf --table-format html
+# STT w/ diarization
+mistral-ai stt meeting.wav --diarize --language en
 
-# Pipe to LLM
-mistral-ai ocr ./document.pdf | claude -p "summarize this"
+# STT w/ custom model
+mistral-ai stt meeting.wav --model voxtral-latest
 
-# Batch process
+# List voices as JSON
+mistral-ai tts voices --json | jq '.[] | .voice_id'
+
+# Batch OCR
 for pdf in *.pdf; do
   mistral-ai ocr "$pdf" > "${pdf%.pdf}.md"
 done
 ```
 
----
+## Output Formats
 
-# TTS (Text-to-Speech)
+**OCR:** Markdown + YAML frontmatter (model, pages). Full text w/ formatting preserved.
 
-## Generate Speech
+**TTS:** Binary audio file saved to disk (mp3/wav/pcm/flac/opus).
 
-```bash
-mistral-ai tts <text> [--voice-id ID | --ref-audio FILE] [--format mp3|wav|pcm|flac|opus]
-```
+**STT:** Transcribed text + detected language.
 
-Generate speech from text using Voxtral TTS.
+## Use Cases
 
-**Options:**
+**OCR:** Extract PDFs for indexing, convert scanned docs, batch invoices/contracts, feed to LLMs, process papers.
 
-- `--voice-id` - Preset voice (e.g., `alice`, `bob`, `charlie`)
-- `--ref-audio` - Reference audio file for voice cloning (5-25s)
-- `--format` - Output format (default: mp3)
+**TTS:** Generate voiceovers, voice cloning, accessibility, audio content.
 
-**Requires:** Either `--voice-id` OR `--ref-audio`
-
-### Examples
-
-```bash
-# Preset voice
-mistral-ai tts "Hello, world!" --voice-id alice
-
-# Custom voice via reference audio
-mistral-ai tts "Hello from me!" --ref-audio ./my-voice.wav
-
-# Output format
-mistral-ai tts "Hello!" --voice-id bob --format wav
-
-# Save to file
-mistral-ai tts "Hello, world!" --voice-id alice > output.mp3
-```
+**STT:** Transcribe meetings, podcasts, voice commands, multilingual support.
 
 ---
 
-# STT (Speech-to-Text)
+## Configuration
 
-## Transcribe Audio
-
-```bash
-mistral-ai stt <audio-file-or-url> [--realtime] [--diarize] [--language LANG]
-```
-
-Transcribe audio to text using Voxtral STT.
-
-**Options:**
-
-- `--realtime` - Use realtime model (<200ms latency)
-- `--diarize` - Enable speaker diarization
-- `--language` - Language code (e.g., `en`, `fr`, `de`)
-
-**Supported formats:** MP3, WAV, FLAC, OGG, WebM
-
-**Modes:**
-
-- **Batch** (default) - Best accuracy, async processing
-- **Realtime** - Low latency streaming (<200ms)
-
-### Examples
-
-```bash
-# Basic transcription
-mistral-ai stt ./audio.mp3
-
-# From URL
-mistral-ai stt https://example.com/audio.mp3
-
-# Realtime mode (low latency)
-mistral-ai stt ./audio.mp3 --realtime
-
-# Speaker diarization
-mistral-ai stt ./meeting.mp3 --diarize
-
-# Specific language
-mistral-ai stt ./audio.mp3 --language en
-
-# Combine options
-mistral-ai stt ./meeting.mp3 --realtime --diarize --language en
-```
-
----
-
-# Configuration
-
-## Set API Key
+### Set API Key
 
 ```bash
 mistral-ai config api_key YOUR_API_KEY
 ```
 
-Stores in `~/.mistral-ai/config.json`.
+Stores in `~/.mistral-ai/config.json`. Or env var: `export MISTRAL_API_KEY=YOUR_API_KEY`.
 
-Or env var:
-
-```bash
-export MISTRAL_API_KEY=YOUR_API_KEY
-```
-
-## Set Base URL (Optional)
+### Set Base URL
 
 ```bash
-mistral-ai config base_url https://custom.api.com/v1
+mistral-ai config base_url https://api.mistral.ai/v1
 ```
 
-Defaults to `https://api.mistral.ai/v1` if not set.
+Defaults to `https://api.mistral.ai/v1`.
 
-## Set Default Model (Optional)
+### Set Default OCR Model
 
 ```bash
-mistral-ai config model mistral-ai-latest
+mistral-ai config model mistral-ocr-latest
 ```
 
-## Show Current Config
+### Set Default STT Model
+
+```bash
+mistral-ai config stt_model voxtral-mini-latest
+```
+
+### Show Config
 
 ```bash
 mistral-ai config show
 ```
 
-Displays current settings + config file location.
-
-## Config Hierarchy
-
-Env vars override file settings.
-
-**Env vars:**
+## Env Vars
 
 - `MISTRAL_API_KEY` - API key (required)
-- `MISTRAL_AI_CONFIG_DIR` - Config directory (default: `~/.mistral-ai`)
+- `MISTRAL_AI_CONFIG_DIR` - Config dir (default: `~/.mistral-ai`)
 - `MISTRAL_BASE_URL` - API endpoint (default: `https://api.mistral.ai/v1`)
-- `MISTRAL_MODEL` - OCR model (default: `mistral-ai-latest`)
+- `MISTRAL_MODEL` - OCR model (default: `mistral-ocr-latest`)
+- `STT_MODEL` - STT model (default: `voxtral-mini-latest`)
 
-**Priority (highest → lowest):**
-
-1. `MISTRAL_MODEL` env var
-2. `--model` CLI flag
+**Priority (high → low):**
+1. Env var
+2. CLI flag
 3. Config file
-4. Default: `mistral-ai-latest`
+4. Default
 
 ---
 
-# Troubleshooting
+## MCP Tools
+
+**ocr_pdf** - Extract text from PDFs (local/URL)
+- Input: `sources` (array of paths/URLs)
+- Output: Markdown (one section per source)
+- Mechanism: Local → upload → signed URL → OCR
+
+**tts_speech** - Generate speech from text
+- Input: `text`, `voice_id` or `ref_audio_url`, `format`
+- Output: Audio file path (`/tmp/speech_${timestamp}.${format}`)
+- Voices injected into description (dynamic from API)
+
+**stt_transcribe** - Transcribe audio to text
+- Input: `audio_source`, `diarize`, `language`, `model`
+- Output: Transcribed text + language
+- Languages injected into description (15 supported)
+
+---
+
+## Troubleshooting
 
 **"MISTRAL_API_KEY required"**
+- `mistral-ai config api_key <key>` or `export MISTRAL_API_KEY=<key>`
 
-- Set via CLI: `mistral-ai config api_key <key>`
-- Or env var: `export MISTRAL_API_KEY=<key>`
+**Custom endpoint**
+- `mistral-ai config base_url https://custom.api.com/v1`
 
-**TTS requires voice_id or ref_audio**
-
-- Use preset: `--voice-id alice`
-- Or voice clone: `--ref-audio ./my-voice.wav`
-
-**STT file not found**
-
-- Ensure file exists or use HTTPS URL
+**Custom model**
+- Flag: `mistral-ai ocr file.pdf --model mistral-ocr-latest`
+- Config: `mistral-ai config model mistral-ocr-latest`
+- Env: `MISTRAL_MODEL=mistral-ocr-latest mistral-ai ocr file.pdf`
 
 **Help**
-
 ```bash
 mistral-ai
 ```

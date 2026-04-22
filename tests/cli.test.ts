@@ -24,7 +24,7 @@ describe('CLI', () => {
   });
 
   it('sets api_key', () => {
-    execSync(`tsx src/cli.ts config api_key test-key-123`, {
+    execSync(`node dist/cli.js config api_key test-key-123`, {
       env: { ...process.env, MISTRAL_AI_CONFIG_DIR: testConfigDir },
     });
     const config = JSON.parse(fs.readFileSync(testConfigFile, 'utf-8'));
@@ -32,7 +32,7 @@ describe('CLI', () => {
   });
 
   it('sets base_url', () => {
-    execSync(`tsx src/cli.ts config base_url https://custom.api.com/v1`, {
+    execSync(`node dist/cli.js config base_url https://custom.api.com/v1`, {
       env: { ...process.env, MISTRAL_AI_CONFIG_DIR: testConfigDir },
     });
     const config = JSON.parse(fs.readFileSync(testConfigFile, 'utf-8'));
@@ -47,7 +47,7 @@ describe('CLI', () => {
         base_url: 'https://test.api.com/v1',
       })
     );
-    const output = execSync(`tsx src/cli.ts config show`, {
+    const output = execSync(`node dist/cli.js config show`, {
       env: { ...process.env, MISTRAL_AI_CONFIG_DIR: testConfigDir },
       encoding: 'utf-8',
     });
@@ -56,7 +56,7 @@ describe('CLI', () => {
   });
 
   it('shows help with ocr command', () => {
-    const output = execSync(`tsx src/cli.ts`, {
+    const output = execSync(`node dist/cli.js`, {
       env: { ...process.env, MISTRAL_AI_CONFIG_DIR: testConfigDir },
       encoding: 'utf-8',
     });
@@ -64,7 +64,7 @@ describe('CLI', () => {
   });
 
   it('shows help with tts command', () => {
-    const output = execSync(`tsx src/cli.ts`, {
+    const output = execSync(`node dist/cli.js`, {
       env: { ...process.env, MISTRAL_AI_CONFIG_DIR: testConfigDir },
       encoding: 'utf-8',
     });
@@ -72,7 +72,7 @@ describe('CLI', () => {
   });
 
   it('shows help with stt command', () => {
-    const output = execSync(`tsx src/cli.ts`, {
+    const output = execSync(`node dist/cli.js`, {
       env: { ...process.env, MISTRAL_AI_CONFIG_DIR: testConfigDir },
       encoding: 'utf-8',
     });

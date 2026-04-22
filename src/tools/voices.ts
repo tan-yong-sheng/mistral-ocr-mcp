@@ -35,10 +35,20 @@ export async function listVoices(baseUrl: string, apiKey: string): Promise<Voice
           res.on('end', () => {
             if (res.statusCode !== 200) {
               reject(new Error(`Voices API error: ${res.statusCode} ${data}`));
-            } else {
+              return;
+            }
+            try {
               const response = JSON.parse(data);
-              cachedVoices = response.voices || [];
-              resolve(cachedVoices as Voice[]);
+              const items = response.items || response.voices || [];
+              const voices = items.map((item: any) => ({
+                voice_id: item.slug || item.voice_id || item.id,
+                name: item.name,
+                language: item.languages?.[0],
+              }));
+              cachedVoices = voices;
+              resolve(voices);
+            } catch (err) {
+              reject(err);
             }
           });
         }
