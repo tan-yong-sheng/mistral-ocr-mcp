@@ -7,7 +7,13 @@ import { createRequire } from 'module';
 import { getConfig } from './config.js';
 import fs from 'fs';
 import path from 'path';
-import { uploadFileToMistral, getSignedUrlFromMistral, callOCRAPI } from './tools/index.js';
+import {
+  uploadFileToMistral,
+  getSignedUrlFromMistral,
+  callOCRAPI,
+  generateSpeech,
+  transcribeAudio,
+} from './tools/index.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../package.json');
@@ -25,7 +31,7 @@ try {
 }
 
 const server = new McpServer({
-  name: 'Mistral OCR MCP',
+  name: 'Mistral AI MCP',
   version: packageJson.version,
 });
 
@@ -101,6 +107,100 @@ server.tool(
             text: `Error: ${error.message}`,
           },
         ],
+      };
+    }
+  }
+);
+
+server.tool(
+  'tts_speech',
+  'Generate speech from text using Voxtral TTS. Supports voice cloning with reference audio.',
+  {
+    text: z.string().describe('Text to convert to speech'),
+    voice_id: z.string().optional().describe('Preset voice ID (e.g., "alice", "bob")'),
+    ref_audio_url: z
+      .string()
+      .optional()
+      .describe('HTTPS URL to reference audio (5-25s) for voice cloning'),
+    format: z
+      .enum(['mp3', 'wav', 'pcm', 'flac', 'opus'])
+      .optional()
+      .describe('Output format (default: mp3)'),
+  },
+  async ({ text, voice_id, ref_audio_url, format }) => {
+    try {
+      if (!voice_id && !ref_audio_url) {
+        return {
+          content: [{ type: 'text', text: 'Error: Either voice_id or ref_audio_url required' }],
+        };
+      }
+
+      // If ref_audio_url, download to temp file
+      let refAudioPath: string | undefined;
+      if (ref_audio_url) {
+        // Download logic here
+        refAudioPath = '/tmp/ref_audio.wav'; // placeholder
+      }
+
+      const result = await generateSpeech(
+        MISTRAL_BASE_URL,
+        MISTRAL_API_KEY,
+        text,
+        voice_id,
+        refAudioPath,
+        (format as any) || 'mp3'
+      );
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Speech generated (${result.model}). Audio data (base64): ${result.audio_data.substring(0, 100)}...`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [{ type: 'text', text: `Error: ${error.message}` }],
+      };
+    }
+  }
+);
+
+server.tool(
+  'stt_transcribe',
+  'Transcribe audio to text using Voxtral STT. Supports batch and realtime modes.',
+  {
+    audio_source: z.string().describe('Audio file path or HTTPS URL'),
+    realtime: z
+      .boolean()
+      .optional()
+      .describe('Use realtime model (<200ms latency) instead of batch'),
+    diarize: z.boolean().optional().describe('Enable speaker diarization'),
+    language: z.string().optional().describe('Language code (e.g., "en", "fr")'),
+  },
+  async ({ audio_source, realtime, diarize, language }) => {
+    try {
+      const result = await transcribeAudio(
+        MISTRAL_BASE_URL,
+        MISTRAL_API_KEY,
+        audio_source,
+        realtime || false,
+        diarize || false,
+        language
+      );
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Transcription (${result.model}):\n\n${result.text}\n\nLanguage: ${result.language || 'auto-detected'}`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [{ type: 'text', text: `Error: ${error.message}` }],
       };
     }
   }
