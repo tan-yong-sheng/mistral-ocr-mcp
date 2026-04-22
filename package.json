@@ -43,6 +43,9 @@
 		"type": "git",
 		"url": "https://github.com/tan-yong-sheng/mistral-ai-mcp.git"
 	},
+	"publishConfig": {
+		"access": "public"
+	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.13.1",
 		"node-fetch": "^3.3.2",
