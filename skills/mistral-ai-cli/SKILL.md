@@ -8,7 +8,7 @@ description: Mistral AI CLI. OCR (PDFs local/URL), TTS (text→speech w/ voice c
 ## Installation
 
 ```bash
-npm install -g mistral-ai-mcp
+npm install -g @tan-yong-sheng/mistral-ai-mcp
 ```
 
 ## Commands
@@ -30,7 +30,6 @@ Extract text from PDF → markdown w/ YAML frontmatter.
 model: mistral-ocr-latest
 pages: 35
 ---
-
 # Extracted markdown content
 
 Full text with headers, lists, formatting preserved...
@@ -156,6 +155,7 @@ mistral-ai config show
 - `MISTRAL_MODEL` - OCR model (default: `mistral-ocr-latest`)
 
 **Priority (high → low):**
+
 1. Env var
 2. CLI flag
 3. Config file
@@ -166,16 +166,19 @@ mistral-ai config show
 ## MCP Tools
 
 **ocr_pdf** - Extract text from PDFs (local/URL)
+
 - Input: `sources` (array of paths/URLs)
 - Output: Markdown (one section per source)
 - Mechanism: Local → upload → signed URL → OCR
 
 **tts_speech** - Generate speech from text
+
 - Input: `text`, `voice_id` or `ref_audio_url`, `format`
 - Output: Audio file path (`/tmp/speech_${timestamp}.${format}`)
 - Voices injected into description (dynamic from API)
 
 **stt_transcribe** - Transcribe audio to text
+
 - Input: `audio_source`, `realtime`, `diarize`, `language`
 - Output: Transcribed text + language
 - Languages injected into description (15 supported)
@@ -185,17 +188,21 @@ mistral-ai config show
 ## Troubleshooting
 
 **"MISTRAL_API_KEY required"**
+
 - `mistral-ai config api_key <key>` or `export MISTRAL_API_KEY=<key>`
 
 **Custom endpoint**
+
 - `mistral-ai config base_url https://custom.api.com/v1`
 
 **Custom model**
+
 - Flag: `mistral-ai ocr file.pdf --model mistral-ocr-latest`
 - Config: `mistral-ai config model mistral-ocr-latest`
 - Env: `MISTRAL_MODEL=mistral-ocr-latest mistral-ai ocr file.pdf`
 
 **Help**
+
 ```bash
 mistral-ai
 ```

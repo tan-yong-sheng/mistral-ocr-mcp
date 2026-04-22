@@ -1,5 +1,5 @@
 {
-	"name": "mistral-ai-mcp",
+	"name": "@tan-yong-sheng/mistral-ai-mcp",
 	"version": "0.0.1",
 	"description": "Mistral AI MCP server. OCR, TTS, STT via Voxtral.",
 	"main": "dist/index.js",
