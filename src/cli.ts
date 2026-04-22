@@ -11,9 +11,64 @@ import {
   generateSpeech,
   transcribeAudio,
   validateDocumentType as _validateDocumentType,
+  listVoices,
+  listLanguages,
 } from './tools/index.js';
 
 const configDir = process.env.MISTRAL_AI_CONFIG_DIR || path.join(os.homedir(), '.mistral-ai');
+
+async function runTTSVoices(configDir: string, args: string[]) {
+  if (args.includes('--help')) {
+    console.log('Usage: mistral-ai tts voices [--json]');
+    console.log('Options:');
+    console.log('  --json    Output as JSON');
+    process.exit(0);
+  }
+
+  try {
+    const { apiKey, baseUrl } = requireConfig(configDir);
+    const voices = await listVoices(baseUrl, apiKey);
+    const asJson = args.includes('--json');
+
+    if (asJson) {
+      console.log(JSON.stringify(voices, null, 2));
+    } else {
+      console.log('Available TTS voices:');
+      for (const voice of voices) {
+        console.log(`  ${voice.voice_id.padEnd(15)} ${voice.name || ''}`);
+      }
+    }
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+async function runSTTLanguages(args: string[]) {
+  if (args.includes('--help')) {
+    console.log('Usage: mistral-ai stt languages [--json]');
+    console.log('Options:');
+    console.log('  --json    Output as JSON');
+    process.exit(0);
+  }
+
+  try {
+    const languages = listLanguages();
+    const asJson = args.includes('--json');
+
+    if (asJson) {
+      console.log(JSON.stringify(languages, null, 2));
+    } else {
+      console.log('Supported STT languages:');
+      for (const lang of languages) {
+        console.log(`  ${lang.code.padEnd(6)} ${lang.name}`);
+      }
+    }
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -23,7 +78,9 @@ async function main() {
     console.log('Commands:');
     console.log('  ocr <file-or-url> [--model MODEL] [--table-format markdown|html]');
     console.log('  tts <text> [--voice-id ID | --ref-audio FILE] [--format FORMAT]');
+    console.log('  tts voices [--json]           List available TTS voices');
     console.log('  stt <audio> [--realtime] [--diarize] [--language LANG]');
+    console.log('  stt languages                List supported STT languages');
     console.log('  config api_key <value>');
     console.log('  config base_url <value>');
     console.log('  config model <value>');
@@ -36,9 +93,17 @@ async function main() {
   if (command === 'ocr') {
     await runOCR(configDir, subcommand, rest);
   } else if (command === 'tts') {
-    await runTTS(configDir, subcommand, rest);
+    if (subcommand === 'voices') {
+      await runTTSVoices(configDir, rest);
+    } else {
+      await runTTS(configDir, subcommand, rest);
+    }
   } else if (command === 'stt') {
-    await runSTT(configDir, subcommand, rest);
+    if (subcommand === 'languages') {
+      await runSTTLanguages(rest);
+    } else {
+      await runSTT(configDir, subcommand, rest);
+    }
   } else if (command === 'config') {
     if (subcommand === 'api_key' && rest.length > 0) {
       const value = rest.join(' ');

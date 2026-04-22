@@ -1,0 +1,56 @@
+{
+  "success": true,
+  "clones": [
+    {
+      "fileA": "src\\tools\\tts.ts",
+      "startA": 52,
+      "fileB": "src\\tools\\voices.ts",
+      "startB": 29,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "src\\tools\\stt.ts",
+      "startA": 38,
+      "fileB": "src\\tools\\tts.ts",
+      "startB": 38,
+      "lines": 23,
+      "tokens": 0
+    },
+    {
+      "fileA": "src\\tools\\stt.ts",
+      "startA": 62,
+      "fileB": "src\\tools\\tts.ts",
+      "startB": 62,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "src\\tools\\ocr.ts",
+      "startA": 43,
+      "fileB": "src\\tools\\tts.ts",
+      "startB": 51,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "src\\tools\\ocr.ts",
+      "startA": 73,
+      "fileB": "src\\tools\\voices.ts",
+      "startB": 19,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "src\\tools\\ocr.ts",
+      "startA": 125,
+      "fileB": "src\\tools\\tts.ts",
+      "startB": 38,
+      "lines": 23,
+      "tokens": 0
+    }
+  ],
+  "duplicatedLines": 93,
+  "totalLines": 1034,
+  "percentage": 8.99
+}
