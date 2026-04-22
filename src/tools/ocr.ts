@@ -1,13 +1,25 @@
 import https from 'https';
 import http from 'http';
+import fs from 'fs';
 import { OcrResponse } from './types.js';
 
 export const SUPPORTED_DOCS = ['pdf', 'pptx', 'docx', 'xlsx'];
 export const SUPPORTED_IMAGES = ['png', 'jpeg', 'jpg', 'avif'];
+export const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 export function validateDocumentType(filePath: string): boolean {
   const ext = filePath.split('.').pop()?.toLowerCase();
   return [...SUPPORTED_DOCS, ...SUPPORTED_IMAGES].includes(ext || '');
+}
+
+export function validateFileSize(fileSize: number): { valid: boolean; error?: string } {
+  if (fileSize > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `File too large: ${(fileSize / 1024 / 1024).toFixed(2)}MB. Max: ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)}MB`,
+    };
+  }
+  return { valid: true };
 }
 
 function getMimeType(filePath: string): string {

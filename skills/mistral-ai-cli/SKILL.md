@@ -57,10 +57,10 @@ Fetches available voices from API. `--json` for structured output.
 ### STT: Speech to text
 
 ```bash
-mistral-ai stt <audio> [--diarize] [--language LANG] [--model MODEL]
+mistral-ai stt <audio> [--realtime] [--diarize] [--language LANG]
 ```
 
-`--diarize` → speaker labels (batch mode only). `--language` → lang code (en, fr, es, etc). `--model` → STT model (default: voxtral-mini-latest).
+`--realtime` → <200ms latency model. `--diarize` → speaker labels. `--language` → lang code (en, fr, es, etc).
 
 ### List STT languages
 
@@ -80,7 +80,7 @@ mistral-ai ocr ./document.pdf > /tmp/output.md
 mistral-ai ocr https://arxiv.org/pdf/2501.00001.pdf > /tmp/paper.md
 
 # TTS w/ preset voice
-mistral-ai tts "Hello world" --voice-id alice > /tmp/speech.mp3
+mistral-ai tts "Hello world" --voice-id en_paul_neutral > /tmp/speech.mp3
 
 # TTS w/ voice cloning
 mistral-ai tts "Custom message" --ref-audio my_voice.wav > /tmp/cloned.mp3
@@ -88,8 +88,8 @@ mistral-ai tts "Custom message" --ref-audio my_voice.wav > /tmp/cloned.mp3
 # STT w/ diarization
 mistral-ai stt meeting.wav --diarize --language en
 
-# STT w/ custom model
-mistral-ai stt meeting.wav --model voxtral-latest
+# STT realtime (low latency)
+mistral-ai stt stream.wav --realtime
 
 # List voices as JSON
 mistral-ai tts voices --json | jq '.[] | .voice_id'
@@ -136,16 +136,10 @@ mistral-ai config base_url https://api.mistral.ai/v1
 
 Defaults to `https://api.mistral.ai/v1`.
 
-### Set Default OCR Model
+### Set Default Model
 
 ```bash
 mistral-ai config model mistral-ocr-latest
-```
-
-### Set Default STT Model
-
-```bash
-mistral-ai config stt_model voxtral-mini-latest
 ```
 
 ### Show Config
@@ -160,7 +154,6 @@ mistral-ai config show
 - `MISTRAL_AI_CONFIG_DIR` - Config dir (default: `~/.mistral-ai`)
 - `MISTRAL_BASE_URL` - API endpoint (default: `https://api.mistral.ai/v1`)
 - `MISTRAL_MODEL` - OCR model (default: `mistral-ocr-latest`)
-- `STT_MODEL` - STT model (default: `voxtral-mini-latest`)
 
 **Priority (high → low):**
 1. Env var
@@ -183,7 +176,7 @@ mistral-ai config show
 - Voices injected into description (dynamic from API)
 
 **stt_transcribe** - Transcribe audio to text
-- Input: `audio_source`, `diarize`, `language`, `model`
+- Input: `audio_source`, `realtime`, `diarize`, `language`
 - Output: Transcribed text + language
 - Languages injected into description (15 supported)
 

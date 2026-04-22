@@ -13,6 +13,7 @@ import {
   listVoices,
   listLanguages,
   validateLanguageCode,
+  validateFileSize,
 } from './tools/index.js';
 
 const configDir = process.env.MISTRAL_AI_CONFIG_DIR || path.join(os.homedir(), '.mistral-ai');
@@ -255,6 +256,11 @@ async function runOCR(configDir: string, pdfPath: string, args: string[]) {
     let documentUrl = pdfPath;
     if (!pdfPath.startsWith('http://') && !pdfPath.startsWith('https://')) {
       const fileBuffer = fs.readFileSync(pdfPath);
+      const validation = validateFileSize(fileBuffer.length);
+      if (!validation.valid) {
+        console.error(`Error: ${validation.error}`);
+        process.exit(1);
+      }
       const fileName = path.basename(pdfPath);
       const fileId = await uploadFileToMistral(baseUrl, apiKey, fileBuffer, fileName);
       documentUrl = await getSignedUrlFromMistral(baseUrl, apiKey, fileId);
