@@ -4,7 +4,7 @@ import { getConfig, setConfig, getConfigPath } from './config.js';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { uploadFileToMistral, getSignedUrlFromMistral, callOCRAPI } from './ocr.js';
+import { uploadFileToMistral, getSignedUrlFromMistral, callOCRAPI } from './tools/index.js';
 
 const configDir = process.env.MISTRAL_AI_CONFIG_DIR || path.join(os.homedir(), '.mistral-ai');
 
