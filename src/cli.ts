@@ -85,9 +85,15 @@ function requireConfig(configDir: string) {
 }
 
 async function runTTS(configDir: string, text: string, args: string[]) {
-  if (!text) {
-    console.error('Error: Text required');
-    process.exit(1);
+  if (!text || text === '--help' || args.includes('--help')) {
+    console.log(
+      'Usage: mistral-ai tts <text> [--voice-id ID | --ref-audio FILE] [--format FORMAT]'
+    );
+    console.log('Options:');
+    console.log('  --voice-id ID      Preset voice ID (e.g., "alice", "bob")');
+    console.log('  --ref-audio FILE   Reference audio file for voice cloning');
+    console.log('  --format FORMAT    Output format: mp3, wav, pcm, flac, opus (default: mp3)');
+    process.exit(0);
   }
 
   try {
@@ -114,9 +120,13 @@ async function runTTS(configDir: string, text: string, args: string[]) {
 }
 
 async function runSTT(configDir: string, audioSource: string, args: string[]) {
-  if (!audioSource) {
-    console.error('Error: Audio file or URL required');
-    process.exit(1);
+  if (!audioSource || audioSource === '--help' || args.includes('--help')) {
+    console.log('Usage: mistral-ai stt <audio-file-or-url> [options]');
+    console.log('Options:');
+    console.log('  --realtime         Use realtime model (<200ms latency)');
+    console.log('  --diarize          Enable speaker diarization');
+    console.log('  --language LANG    Language code (e.g., "en", "fr")');
+    process.exit(0);
   }
 
   try {
