@@ -83,6 +83,48 @@ console.log(result.content[0].text);
 
 Override: `MISTRAL_AI_CONFIG_DIR` env var.
 
+## Development
+
+### Setup
+
+```bash
+npm install
+```
+
+### Scripts
+
+```bash
+npm run dev          # Run with tsx (watch mode)
+npm run build        # Compile TypeScript
+npm run clean        # Remove dist/
+npm run lint         # ESLint check
+npm run format       # Prettier check
+npm run format:write # Prettier fix
+npm run typecheck    # Type check only
+npm run test         # Run tests
+```
+
+### Git Hooks
+
+Husky hooks enforce code quality:
+
+- **pre-commit**: Runs `npm run lint && npm run format`
+- **pre-push**: Runs `npm run typecheck && npm run test`
+
+Hooks automatic. Bypass (not recommended):
+
+```bash
+git commit --no-verify
+git push --no-verify
+```
+
+### CI/CD
+
+GitHub Actions workflows:
+
+- **CI** (`.github/workflows/ci.yml`): Lint, build, typecheck on push/PR
+- **Tests** (`.github/workflows/test.yml`): Run tests on push/PR
+
 ## License
 
 ISC
