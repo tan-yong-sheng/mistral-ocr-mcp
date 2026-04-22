@@ -1,7 +1,7 @@
 {
-  "name": "mistral-ocr-mcp",
-  "version": "0.0.9",
-  "description": "Mistral OCR CLI + MCP server. Extract text from PDFs via URL.",
+  "name": "mistral-ai-mcp",
+  "version": "0.0.1",
+  "description": "Mistral AI MCP server. OCR, TTS, STT via Voxtral.",
   "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js"
@@ -26,7 +26,7 @@
     "README.md"
   ],
   "bin": {
-    "mistral-ocr": "dist/cli.js"
+    "mistral-ai": "dist/cli.js"
   },
   "keywords": [
     "mcp",
@@ -39,7 +39,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tan-yong-sheng/mistral-ocr-mcp.git"
+    "url": "https://github.com/tan-yong-sheng/mistral-ai-mcp.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",

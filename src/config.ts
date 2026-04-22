@@ -11,7 +11,7 @@ const ConfigSchema = z.object({
 
 export type Config = z.infer<typeof ConfigSchema>;
 
-const DEFAULT_CONFIG_DIR = path.join(os.homedir(), '.mistral-ocr');
+const DEFAULT_CONFIG_DIR = path.join(os.homedir(), '.mistral-ai');
 const CONFIG_FILE = 'config.json';
 
 export function getConfig(configDir: string = DEFAULT_CONFIG_DIR): Config {
