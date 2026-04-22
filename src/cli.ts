@@ -4,7 +4,14 @@ import { getConfig, setConfig, getConfigPath } from './config.js';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { uploadFileToMistral, getSignedUrlFromMistral, callOCRAPI } from './tools/index.js';
+import {
+  uploadFileToMistral,
+  getSignedUrlFromMistral,
+  callOCRAPI,
+  generateSpeech,
+  transcribeAudio,
+  validateDocumentType as _validateDocumentType,
+} from './tools/index.js';
 
 const configDir = process.env.MISTRAL_AI_CONFIG_DIR || path.join(os.homedir(), '.mistral-ai');
 
@@ -14,22 +21,24 @@ async function main() {
   if (args.length === 0) {
     console.log('Usage: mistral-ai <command> [args]');
     console.log('Commands:');
-    console.log('  ocr <file-or-url> [--model MODEL] - Extract text from documents/images');
-    console.log('  tts <text> [--voice-id ID]       - Generate speech from text');
-    console.log('  stt <audio-file-or-url> [--realtime] - Transcribe audio to text');
-    console.log('  config api_key <value>           - Set API key');
-    console.log('  config base_url <value>          - Set base URL');
-    console.log('  config model <value>           - Set default model');
-    console.log('  config show                    - Show current config');
+    console.log('  ocr <file-or-url> [--model MODEL] [--table-format markdown|html]');
+    console.log('  tts <text> [--voice-id ID | --ref-audio FILE] [--format FORMAT]');
+    console.log('  stt <audio> [--realtime] [--diarize] [--language LANG]');
+    console.log('  config api_key <value>');
+    console.log('  config base_url <value>');
+    console.log('  config model <value>');
+    console.log('  config show');
     process.exit(0);
   }
 
   const [command, subcommand, ...rest] = args;
 
   if (command === 'ocr') {
-    const modelIdx = rest.indexOf('--model');
-    const model = modelIdx >= 0 ? rest[modelIdx + 1] : undefined;
-    await runOCR(configDir, subcommand, model);
+    await runOCR(configDir, subcommand, rest);
+  } else if (command === 'tts') {
+    await runTTS(configDir, subcommand, rest);
+  } else if (command === 'stt') {
+    await runSTT(configDir, subcommand, rest);
   } else if (command === 'config') {
     if (subcommand === 'api_key' && rest.length > 0) {
       const value = rest.join(' ');
@@ -65,20 +74,85 @@ async function main() {
   }
 }
 
-async function runOCR(configDir: string, pdfPath: string, cliModel?: string) {
+function requireConfig(configDir: string) {
+  const config = getConfig(configDir);
+  if (!config.api_key) {
+    console.error('Error: MISTRAL_API_KEY required');
+    process.exit(1);
+  }
+  const baseUrl = config.base_url || 'https://api.mistral.ai/v1';
+  return { config, baseUrl, apiKey: config.api_key };
+}
+
+async function runTTS(configDir: string, text: string, args: string[]) {
+  if (!text) {
+    console.error('Error: Text required');
+    process.exit(1);
+  }
+
+  try {
+    const { apiKey, baseUrl } = requireConfig(configDir);
+    const voiceIdIdx = args.indexOf('--voice-id');
+    const refAudioIdx = args.indexOf('--ref-audio');
+    const formatIdx = args.indexOf('--format');
+
+    const voiceId = voiceIdIdx >= 0 ? args[voiceIdIdx + 1] : undefined;
+    const refAudio = refAudioIdx >= 0 ? args[refAudioIdx + 1] : undefined;
+    const format = (formatIdx >= 0 ? args[formatIdx + 1] : 'mp3') as any;
+
+    if (!voiceId && !refAudio) {
+      console.error('Error: Either --voice-id or --ref-audio required');
+      process.exit(1);
+    }
+
+    const response = await generateSpeech(baseUrl, apiKey, text, voiceId, refAudio, format);
+    console.log(response.audio_data);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+async function runSTT(configDir: string, audioSource: string, args: string[]) {
+  if (!audioSource) {
+    console.error('Error: Audio file or URL required');
+    process.exit(1);
+  }
+
+  try {
+    const { apiKey, baseUrl } = requireConfig(configDir);
+    const realtime = args.includes('--realtime');
+    const diarize = args.includes('--diarize');
+    const langIdx = args.indexOf('--language');
+    const language = langIdx >= 0 ? args[langIdx + 1] : undefined;
+
+    const response = await transcribeAudio(
+      baseUrl,
+      apiKey,
+      audioSource,
+      realtime,
+      diarize,
+      language
+    );
+    console.log(response.text);
+  } catch (err: any) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+async function runOCR(configDir: string, pdfPath: string, args: string[]) {
   if (!pdfPath) {
     console.error('Error: PDF path required');
     process.exit(1);
   }
 
   try {
-    const config = getConfig(configDir);
-    if (!config.api_key) {
-      console.error('Error: MISTRAL_API_KEY required. Set via: mistral-ocr config api_key <key>');
-      process.exit(1);
-    }
-
-    const baseUrl = config.base_url || 'https://api.mistral.ai/v1';
+    const { config, apiKey, baseUrl } = requireConfig(configDir);
+    const modelIdx = args.indexOf('--model');
+    const tableFormatIdx = args.indexOf('--table-format');
+    const cliModel = modelIdx >= 0 ? args[modelIdx + 1] : undefined;
+    const tableFormat = tableFormatIdx >= 0 ? (args[tableFormatIdx + 1] as any) : undefined;
     const model = process.env.MISTRAL_MODEL || cliModel || config.model || 'mistral-ocr-latest';
 
     // Local file → upload → get signed URL
@@ -86,11 +160,11 @@ async function runOCR(configDir: string, pdfPath: string, cliModel?: string) {
     if (!pdfPath.startsWith('http://') && !pdfPath.startsWith('https://')) {
       const fileBuffer = fs.readFileSync(pdfPath);
       const fileName = path.basename(pdfPath);
-      const fileId = await uploadFileToMistral(baseUrl, config.api_key, fileBuffer, fileName);
-      documentUrl = await getSignedUrlFromMistral(baseUrl, config.api_key, fileId);
+      const fileId = await uploadFileToMistral(baseUrl, apiKey, fileBuffer, fileName);
+      documentUrl = await getSignedUrlFromMistral(baseUrl, apiKey, fileId);
     }
 
-    const response = await callOCRAPI(baseUrl, config.api_key, documentUrl, model);
+    const response = await callOCRAPI(baseUrl, apiKey, documentUrl, model, tableFormat);
 
     const result = {
       text: response.pages.map((p: any) => p.markdown).join('\n\n'),
