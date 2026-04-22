@@ -1,6 +1,12 @@
 # mistral-ai-mcp
 
-Mistral OCR CLI + MCP server. Extract text from PDFs via URL using `mistral-ocr-latest` model.
+Mistral AI MCP server + CLI. OCR documents, TTS text-to-speech, STT speech-to-text via Voxtral.
+
+## Features
+
+- **OCR** - Extract text from PDFs, DOCX, PPTX, XLSX, images
+- **TTS** - Generate speech with preset voices or voice cloning
+- **STT** - Transcribe audio (batch or realtime)
 
 ## Install
 
@@ -8,52 +14,119 @@ Mistral OCR CLI + MCP server. Extract text from PDFs via URL using `mistral-ocr-
 npm install -g mistral-ai-mcp
 ```
 
-## Setup
+Requires Node.js 18+.
 
-Set API key:
+## CLI Usage
+
+```bash
+mistral-ai ocr <file-or-url>    # Extract text from documents/images
+mistral-ai tts <text>            # Generate speech from text
+mistral-ai stt <audio>           # Transcribe audio to text
+mistral-ai config ...            # Manage configuration
+```
+
+### OCR Examples
+
+```bash
+# Local PDF
+mistral-ai ocr ./document.pdf > output.md
+
+# From URL
+mistral-ai ocr https://arxiv.org/pdf/2301.00001.pdf > paper.md
+
+# Tables
+mistral-ai ocr ./document.pdf --table-format html
+```
+
+### TTS Examples
+
+```bash
+# Preset voice
+mistral-ai tts "Hello, world!" --voice-id alice
+
+# Voice cloning via reference audio
+mistral-ai tts "Hello from me!" --ref-audio ./my-voice.wav
+
+# Output format
+mistral-ai tts "Hello!" --voice-id bob --format wav > output.wav
+```
+
+### STT Examples
+
+```bash
+# Basic transcription
+mistral-ai stt ./audio.mp3
+
+# Realtime mode (low latency)
+mistral-ai stt ./audio.mp3 --realtime
+
+# Speaker diarization
+mistral-ai stt ./meeting.mp3 --diarize
+
+# Specific language
+mistral-ai stt ./audio.mp3 --language en
+```
+
+## Supported Formats
+
+| Tool | Input Formats                          | Output Formats            |
+| ---- | -------------------------------------- | ------------------------- |
+| OCR  | PDF, DOCX, PPTX, XLSX, PNG, JPEG, AVIF | Markdown + YAML           |
+| TTS  | Text                                   | MP3, WAV, PCM, FLAC, Opus |
+| STT  | MP3, WAV, FLAC, OGG, WebM              | Text + JSON               |
+
+## Configuration
+
+### Set API Key
 
 ```bash
 mistral-ai config api_key <your-key>
 ```
 
-Optional: custom base URL (default: `https://api.mistral.ai/v1`):
+Or via environment:
 
 ```bash
-mistral-ai config base_url https://custom.url/v1
+export MISTRAL_API_KEY=your-key
 ```
 
-## CLI Usage
+### Config Location
 
-Extract text from PDF URL:
+- Linux/macOS: `~/.mistral-ai/config.json`
+- Windows: `%USERPROFILE%\.mistral-ai\config.json`
+
+Override with `MISTRAL_AI_CONFIG_DIR` env var.
+
+### Show Config
 
 ```bash
-mistral-ai ocr "https://arxiv.org/pdf/2301.00001.pdf"
+mistral-ai config show
 ```
 
-Output: JSON with `text`, `pages`, `confidence`, `model`.
-
-Config commands:
+### Config Options
 
 ```bash
-mistral-ai config show          # Show current config
-mistral-ai config api_key <key> # Set API key
-mistral-ai config base_url <url> # Set base URL
+mistral-ai config api_key <key>    # Set API key
+mistral-ai config base_url <url>    # API endpoint (default: https://api.mistral.ai/v1)
+mistral-ai config model <model>     # Default OCR model
 ```
 
 ## MCP Server
 
-Start server (stdio transport):
+Start server with stdio transport:
 
 ```bash
 mistral-ai-mcp
 ```
 
-Tool: `ocr_pdf_url`
+### MCP Tools
 
-- Input: `pdf_url` (public URL to PDF)
-- Output: Extracted markdown text
+| Tool             | Description               |
+| ---------------- | ------------------------- |
+| `ocr_pdf_url`    | Extract text from PDF URL |
+| `tts_speech`     | Generate speech from text |
+| `stt_transcribe` | Transcribe audio to text  |
 
-Example (Node.js client):
+### Example (Node.js client)
 
 ```javascript
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -68,20 +141,24 @@ const transport = new StdioClientTransport({
 const client = new Client({ name: 'test', version: '1.0.0' }, { capabilities: {} });
 await client.connect(transport);
 
-const result = await client.callTool({
+// OCR
+const ocrResult = await client.callTool({
   name: 'ocr_pdf_url',
   arguments: { pdf_url: 'https://example.com/doc.pdf' },
 });
 
-console.log(result.content[0].text);
+// TTS
+const ttsResult = await client.callTool({
+  name: 'tts_speech',
+  arguments: { text: 'Hello!', voice_id: 'alice' },
+});
+
+// STT
+const sttResult = await client.callTool({
+  name: 'stt_transcribe',
+  arguments: { audio_source: './audio.mp3' },
+});
 ```
-
-## Config Location
-
-- Linux/macOS: `~/.mistral-ai/config.json`
-- Windows: `%USERPROFILE%\.mistral-ai\config.json`
-
-Override: `MISTRAL_AI_CONFIG_DIR` env var.
 
 ## Development
 
@@ -110,13 +187,6 @@ Husky hooks enforce code quality:
 
 - **pre-commit**: Runs `npm run lint && npm run format`
 - **pre-push**: Runs `npm run typecheck && npm run test`
-
-Hooks automatic. Bypass (not recommended):
-
-```bash
-git commit --no-verify
-git push --no-verify
-```
 
 ### CI/CD
 
